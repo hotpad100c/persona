@@ -1,0 +1,66 @@
+{
+  "item.persona.roster": "Roster",
+
+  "command.persona.common.colon": ": ",
+
+  "command.persona.character.create.success": "Character created",
+  "command.persona.character.create.failed": "Error while creating character: limit reached or error occurred",
+
+  "command.persona.character.switch.success": "Switched to",
+  "command.persona.character.switch.failed": "Failed to switch character",
+
+  "command.persona.character.list.title": "=== CHARACTERS ===",
+  "command.persona.character.list.empty": "The player has no characters yet",
+  "command.persona.character.list.current": "  <-",
+  "command.persona.character.list.id": "\n   ID: %s",
+  "command.persona.character.list.date": "\n   Date: %s",
+
+  "command.persona.character.delete.success": "Deleted character",
+  "command.persona.character.delete.failed": "Failed to delete character",
+
+  "command.persona.common.to": " -> ",
+  "command.persona.common.yes": "Yes",
+  "command.persona.common.no": "No",
+  "command.persona.common.error": "Command failed: %s",
+
+  "command.persona.category.create.success": "Category created / updated",
+  "command.persona.category.create.failed": "Failed to create category",
+
+  "command.persona.category.delete.success": "Deleted category",
+  "command.persona.category.delete.failed": "Failed to delete category (not found or default)",
+
+  "command.persona.category.list.title": "=== Player Categories ===",
+  "command.persona.category.list.empty": "No categories exist",
+  "command.persona.category.list.entry": "• ",
+  "command.persona.category.list.id": " [%s]",
+  "command.persona.category.list.max": "\n  Max Characters: %s",
+  "command.persona.category.list.roster": " - Roster: %s",
+  "command.persona.category.list.priority": " - Priority: %s",
+  "command.persona.category.list.roster_level": " - Roster Level: '%s",
+
+  "command.persona.category.id": "\nID: %s",
+  "command.persona.category.max": "\nMax Characters: %s",
+  "command.persona.category.roster": "\nUse Roster: %s",
+  "command.persona.category.priority": "\nPriority: %s",
+  "command.persona.category.roster_level": "\nRoster Level: %s",
+
+  "command.persona.category.player.set": "Set player ",
+  "command.persona.category.player.notify": "Your category is now: ",
+  "command.persona.category.player.failed": "Category does not exist",
+
+  "command.persona.player.info.title": "=== Player Info ===",
+  "command.persona.player.info.name": "Player: ",
+  "command.persona.player.info.category": "Category: ",
+  "command.persona.player.info.category_id": " [%s]",
+  "command.persona.player.info.max": "Max Characters: ",
+  "command.persona.player.info.roster": "Use Roster: ",
+  "command.persona.player.info.roster_level": "Roster Level: ",
+
+  "persona.roster.add_player": "Record Player",
+  "persona.roster.name": "Name",
+  "persona.roster.confirm": "Confirm",
+  "persona.roster.cancel": "Cancel",
+
+  "persona.roster.recorded": "Recorded character: %s",
+  "persona.roster.already": "This character is already in your roster."
+}

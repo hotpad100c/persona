@@ -1,0 +1,65 @@
+{
+  "item.persona.roster": "花名册",
+  "command.persona.common.colon": "：",
+
+  "command.persona.character.create.success": "已创建角色",
+  "command.persona.character.create.failed": "创建角色失败：已达到上限或发生错误",
+
+  "command.persona.character.switch.success": "已切换到",
+  "command.persona.character.switch.failed": "切换角色失败：角色不存在或发生错误",
+
+  "command.persona.character.list.title": "=== 角色列表 ===",
+  "command.persona.character.list.empty": "该玩家还没有任何角色",
+  "command.persona.character.list.current": "  ← 当前",
+  "command.persona.character.list.id": "\n   ID：%s",
+  "command.persona.character.list.date": "\n   创建时间：%s",
+
+  "command.persona.character.delete.success": "已删除角色",
+  "command.persona.character.delete.failed": "删除角色失败：角色不存在或发生错误",
+
+  "command.persona.common.to": " → ",
+  "command.persona.common.yes": "是",
+  "command.persona.common.no": "否",
+  "command.persona.common.error": "命令执行失败：%s",
+
+  "command.persona.category.create.success": "已创建/更新类别",
+  "command.persona.category.create.failed": "创建类别失败",
+
+  "command.persona.category.delete.success": "已删除类别",
+  "command.persona.category.delete.failed": "删除类别失败：不存在或为默认类别",
+
+  "command.persona.category.list.title": "=== 玩家类别列表 ===",
+  "command.persona.category.list.empty": "没有任何类别",
+  "command.persona.category.list.entry": "• ",
+  "command.persona.category.list.id": " [%s]",
+  "command.persona.category.list.max": "\n  最大角色数：%s",
+  "command.persona.category.list.roster": " - 花名册：%s",
+  "command.persona.category.list.priority": " - 优先级：%s",
+  "command.persona.category.list.roster_level": " - 花名册等级：%s",
+
+  "command.persona.category.id": "\nID：%s",
+  "command.persona.category.max": "\n最大角色数：%s",
+  "command.persona.category.roster": "\n可使用花名册：%s",
+  "command.persona.category.priority": "\n优先级：%s",
+  "command.persona.category.roster_level": "\n花名册等级：%s",
+
+  "command.persona.category.player.set": "已将玩家 ",
+  "command.persona.category.player.notify": "你的类别已被设置为：",
+  "command.persona.category.player.failed": "类别不存在",
+
+  "command.persona.player.info.title": "=== 玩家信息 ===",
+  "command.persona.player.info.name": "玩家：",
+  "command.persona.player.info.category": "类别：",
+  "command.persona.player.info.category_id": " [%s]",
+  "command.persona.player.info.max": "最大角色数：",
+  "command.persona.player.info.roster": "可使用花名册：",
+  "command.persona.player.info.roster_level": "花名册等级：",
+
+  "persona.roster.add_player": "加入花名册",
+  "persona.roster.name": "名字",
+  "persona.roster.confirm": "确认",
+  "persona.roster.cancel": "取消",
+
+  "persona.roster.recorded": "已记录角色：%s",
+  "persona.roster.already": "这个角色已经在你的花名册中。"
+}

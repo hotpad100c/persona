@@ -20,11 +20,34 @@ repositories {
 
 loom {
 	splitEnvironmentSourceSets()
-
+	accessWidenerPath = file("src/main/resources/persona.accesswidener")
 	mods {
 		"persona" {
 			sourceSet sourceSets.main
 			sourceSet sourceSets.client
+		}
+	}
+	runs {
+
+		clientA {
+			client()
+			name "Client A"
+			programArgs "--gameDir", "clientA",
+					"--username", "DevA",
+					"--uuid", "00000000-0000-0000-0000-000000000001"
+		}
+
+		clientB {
+			client()
+			name "Client B"
+			programArgs "--gameDir", "clientB",
+					"--username", "DevB",
+					"--uuid", "00000000-0000-0000-0000-000000000002"
+		}
+		server {
+			server()
+			name "Dev Server"
+			programArgs "--gameDir", "server"
 		}
 	}
 
@@ -44,9 +67,25 @@ dependencies {
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-	
+
+	include implementation("org.mineskin:java-client:${mineskin_client_version}")
 }
 
+allprojects {
+	repositories {
+		exclusiveContent {
+			forRepository {
+				maven {
+					name = 'lionarius-repository'
+					url = 'https://reposilite.lionarius.ru/releases'
+				}
+			}
+			filter {
+				includeGroupAndSubgroups('org.mineskin')
+			}
+		}
+	}
+}
 processResources {
 	inputs.property "version", project.version
 

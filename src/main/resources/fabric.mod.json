@@ -4,6 +4,7 @@
 	"version": "${version}",
 	"name": "persona",
 	"description": "This is an example description! Tell everyone what your mod is about!",
+	"accessWidener" : "persona.accesswidener",
 	"authors": [
 		"Me!"
 	],
@@ -16,13 +17,13 @@
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"ml.mypals.Persona"
+			"ml.mypals.persona.Persona"
 		],
 		"client": [
-			"ml.mypals.PersonaClient"
+			"ml.mypals.persona.PersonaClient"
 		],
 		"fabric-datagen": [
-			"ml.mypals.PersonaDataGenerator"
+			"ml.mypals.persona.datagen.PersonaDataGenerator"
 		]
 	},
 	"mixins": [

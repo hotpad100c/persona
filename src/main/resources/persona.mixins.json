@@ -1,9 +1,11 @@
 {
 	"required": true,
-	"package": "ml.mypals.mixin",
+	"package": "ml.mypals.persona.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
-		"ExampleMixin"
+		"PlayerMixin",
+		"skin.PlayerAccessor",
+		"skin.TrackedEntityAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1
