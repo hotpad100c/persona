@@ -174,7 +174,7 @@ public class ClientRosterDataManager {
         return currentRoster.getEntry(playerId, charId).map(entry -> {
             entry.setNickname(newNick);
             saveToCache();
-            // sendUpdateNicknameC2S(playerId, charId, newNick);
+            // sendUpdateNicknameC2S(playerId, charId, newNick);//TODO
             return true;
         }).orElse(false);
     }
@@ -183,7 +183,7 @@ public class ClientRosterDataManager {
         return currentRoster.getEntry(playerId, charId).map(entry -> {
             entry.setNotes(newDesc);
             saveToCache();
-            // sendUpdateNicknameC2S(playerId, charId, newNick);
+            // sendUpdateNicknameC2S(playerId, charId, newNick);//TODO
             return true;
         }).orElse(false);
     }
@@ -193,7 +193,7 @@ public class ClientRosterDataManager {
         return currentRoster.getEntry(playerId, charId).map(entry -> {
             entry.setStarred(!entry.isStarred());
             saveToCache();
-            // sendToggleStarC2S(...)
+            // sendToggleStarC2S(...)//TODO
             return true;
         }).orElse(false);
     }

@@ -111,7 +111,7 @@ public class ServerPacketRegister {
                                 targetPlayer,
                                 targetPlayer.getUUID(),
                                 targetCharacter.getCharacterId(),
-                                payload.data().data(),//TODO
+                                payload.data().data(),
                                 ""
                         );
                         if (success != null) {
