@@ -30,19 +30,7 @@ public abstract class AbstractClientPlayerMixin extends Player {
             Component component = this.getCustomName();
             return component!= null? component:Component.literal(this.getGameProfile().name());
         }
-        return Component.literal(getNameIfRecorded());
+        return super.getName();
     }
-    @Unique
-    public String getNameIfRecorded(){
-        ClientRosterDataManager clientRosterDataManager = PersonaClient.getRosterDataManager();
-        Property property = this.getGameProfile().properties().get("persona_character_id").stream().findFirst().orElse(null);
 
-        AtomicReference<String> name = new AtomicReference<>("???");
-        if(property != null){
-            clientRosterDataManager.getEntry(this.stringUUID,property.value()).ifPresent(rosterEntry -> {
-                name.set(rosterEntry.getNickname());
-            });
-        }
-        return name.get();
-    }
 }

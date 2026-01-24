@@ -4,32 +4,25 @@ import ml.mypals.persona.items.rosterData.PlayerRosterData;
 import ml.mypals.persona.items.rosterData.RosterEntry;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.inventory.BookViewScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.gui.screens.inventory.PageButton;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
-
 import java.awt.*;
+import java.util.*;
 import java.util.List;
-
+import java.util.stream.Collectors;
 import static ml.mypals.persona.Persona.MOD_ID;
 import static ml.mypals.persona.fakePlayer.FakePlayerFactory.*;
 
-import net.minecraft.client.gui.components.Button;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class RosterViewScreen extends Screen {
 
-    private static final Logger log = LoggerFactory.getLogger(RosterViewScreen.class);
     private final PlayerRosterData roster;
     private int leftPos;
     private int topPos;
@@ -49,15 +42,26 @@ public class RosterViewScreen extends Screen {
     private static final int SLOTS_PER_COL = 3;
     private static final int SLOTS_PER_PAGE = SLOTS_PER_ROW * SLOTS_PER_COL;
 
+    private static final int BOOKMARK_WIDTH = 40;
+    private static final int BOOKMARK_HEIGHT = 12;
+    private static final int BOOKMARK_SPACING = 1;
+    private static final int STAR_BUTTON_SIZE = 12;
+
+    private int mouseX;
+    private int mouseY;
     private int currentPage = 0;
     private int totalPages = 1;
 
-    private final List<FakeMouse> fakeMice = new ArrayList<>();
-
+    private final Map<Integer,FakeMouse> fakeMice = new HashMap<>();
     private int hoveredSlot = -1;
+    private int hoveredStarButton = -1;
 
     private PageButton flipLeft;
     private PageButton flipRight;
+
+    private String selectedGroup = "all";
+    private List<String> availableGroups = new ArrayList<>();
+    private List<GroupBookmark> groupBookmarks = new ArrayList<>();
 
     public RosterViewScreen(PlayerRosterData roster) {
         super(Component.literal(""));
@@ -67,64 +71,143 @@ public class RosterViewScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-
+        //TODO Sync changes with the server.
         int totalWidth = PAGE_WIDTH * 2 + PAGE_GAP;
         leftPos = (this.width - totalWidth) / 2;
         topPos = (this.height - PAGE_HEIGHT) / 2;
 
-        int entryCount = roster.getEntries().size();
+        collectGroups();
+
+        createGroupBookmarks();
+
+        int entryCount = getFilteredEntries().size();
         totalPages = Math.max(1, (int) Math.ceil((double) entryCount / (SLOTS_PER_PAGE * 2)));
 
         fakeMice.clear();
-        for (int i = 0; i < SLOTS_PER_PAGE * 2; i++) {
-            fakeMice.add(new FakeMouse(width, height));
-        }
 
         if (totalPages > 1) {
             int btnY = topPos + PAGE_HEIGHT - 10;
             int btnWidth = 60;
 
-            flipLeft = this.addRenderableWidget(new PageButton(leftPos + 20, btnY, false,b -> {
+            flipLeft = this.addRenderableWidget(new PageButton(leftPos + 20, btnY, false, b -> {
                 if (currentPage > 0) {
                     currentPage--;
                     hoveredSlot = -1;
                 }
             }, true));
 
-
-            flipRight = this.addRenderableWidget(new PageButton(leftPos + 20 + totalWidth - btnWidth, btnY, true,b -> {
+            flipRight = this.addRenderableWidget(new PageButton(leftPos + 20 + totalWidth - btnWidth, btnY, true, b -> {
                 if (currentPage < totalPages - 1) {
                     currentPage++;
                     hoveredSlot = -1;
                 }
             }, true));
-
         }
+    }
+
+    private void collectGroups() {
+        availableGroups.clear();
+        availableGroups.add("all");
+
+        roster.getEntries().stream()
+                .map(RosterEntry::getGroup)
+                .distinct()
+                .filter(g -> g != null && !g.isEmpty())
+                .forEach(availableGroups::add);
+    }
+
+    private void createGroupBookmarks() {
+        groupBookmarks.clear();
+        int bookmarkX = leftPos - BOOKMARK_WIDTH+5;
+        int startY = topPos + 20;
+        int availableHeight = PAGE_HEIGHT - 40;
+
+        int groupCount = availableGroups.size();
+        int totalHeightNeeded = groupCount * BOOKMARK_HEIGHT + (groupCount - 1) * BOOKMARK_SPACING;
+
+        int actualSpacing = BOOKMARK_SPACING;
+        if (totalHeightNeeded > availableHeight) {
+            actualSpacing = (availableHeight - groupCount * BOOKMARK_HEIGHT) / Math.max(1, groupCount - 1);
+        }
+
+        for (int i = 0; i < availableGroups.size(); i++) {
+            String group = availableGroups.get(i);
+            int y = startY + i * (BOOKMARK_HEIGHT + actualSpacing);
+            groupBookmarks.add(new GroupBookmark(group, bookmarkX, y));
+        }
+    }
+
+    private List<RosterEntry> getFilteredEntries() {
+        List<RosterEntry> entries = new ArrayList<>(roster.getEntries());
+
+        entries.sort((a, b) -> Boolean.compare(b.isStarred(), a.isStarred()));
+        if (!"all".equals(selectedGroup)) {
+            entries = entries.stream()
+                    .filter(e -> selectedGroup.equals(e.getGroup()))
+                    .collect(Collectors.toList());
+        }
+
+        return entries;
     }
 
     @Override
     public void renderBackground(@NotNull GuiGraphics guiGraphics, int i, int j, float f) {
         super.renderBackground(guiGraphics, i, j, f);
-        renderBookPages(guiGraphics);
-
     }
 
     @Override
     public void render(@NotNull GuiGraphics gui, int mouseX, int mouseY, float partialTick) {
-        gui.drawCenteredString(font, this.title, this.width / 2, topPos - 20, 0xFFFFFF);
+
+        renderGroupBookmarks(gui, mouseX, mouseY);
+        renderBookPages(gui);
         String pageText = (currentPage + 1) + " / " + totalPages;
-        gui.drawCenteredString(font, pageText, this.width / 2, topPos + PAGE_HEIGHT + 5, 0xAAAAAA);
+        gui.drawCenteredString(font, pageText, this.width / 2 +3, topPos + PAGE_HEIGHT + 10, 0xFFAAAAAA);
+
         updateHoveredSlot(mouseX, mouseY);
         renderPlayerGrid(gui, partialTick);
 
-        flipLeft.visible = currentPage > 0 && totalPages > 1;
-        flipRight.visible = currentPage+1 < totalPages && totalPages > 1;
+        if (flipLeft != null) flipLeft.visible = currentPage > 0 && totalPages > 1;
+        if (flipRight != null) flipRight.visible = currentPage + 1 < totalPages && totalPages > 1;
 
+        this.mouseX = mouseX;
+        this.mouseY = mouseY;
         super.render(gui, mouseX, mouseY, partialTick);
     }
 
-    private void renderBookPages(GuiGraphics gui) {
+    private void renderGroupBookmarks(GuiGraphics gui, int mouseX, int mouseY) {
+        for (GroupBookmark bookmark : groupBookmarks) {
+            boolean isSelected = bookmark.group.equals(selectedGroup);
+            boolean isHovered = mouseX >= bookmark.x && mouseX < bookmark.x + BOOKMARK_WIDTH &&
+                    mouseY >= bookmark.y && mouseY < bookmark.y + BOOKMARK_HEIGHT;
 
+            int hash = bookmark.hashCode();
+            float hue = (hash & 0xFFFF) / 65535f;
+            float saturation = 0.5f;
+            float brightness = isHovered ? 1.0f : 0.8f;
+            int rgb = Color.HSBtoRGB(hue, saturation, brightness);
+            int borderColor = isHovered || isSelected ?0x88FFFFFF : 0x66FFFFFF;
+
+            int posX = bookmark.x - (isHovered || isSelected?4:0);
+
+            gui.fill(posX, bookmark.y, bookmark.x + BOOKMARK_WIDTH, bookmark.y + BOOKMARK_HEIGHT, rgb);
+            gui.fill(posX, bookmark.y + BOOKMARK_HEIGHT - 1, bookmark.x + BOOKMARK_WIDTH, bookmark.y + BOOKMARK_HEIGHT, borderColor);
+
+            String displayText = bookmark.group.equals("all") ? "All" : bookmark.group;
+            String shorten = displayText;
+
+            if (font.width(displayText) > SLOT_SIZE - 10) {
+                shorten = font.plainSubstrByWidth(shorten, BOOKMARK_WIDTH - 14) + "...";
+                if(isHovered)  gui.setTooltipForNextFrame(Component.literal(displayText), mouseX, mouseY);
+            }
+
+            gui.drawString(font, shorten,
+                    posX+2,
+                    bookmark.y + (BOOKMARK_HEIGHT - font.lineHeight) / 2+1,
+                    -2039584);
+        }
+    }
+
+    private void renderBookPages(GuiGraphics gui) {
         gui.blit(
                 RenderPipelines.GUI_TEXTURED,
                 BOOK_LOCATION,
@@ -137,8 +220,9 @@ public class RosterViewScreen extends Screen {
 
     private void updateHoveredSlot(int mouseX, int mouseY) {
         hoveredSlot = -1;
+        hoveredStarButton = -1;
 
-        List<RosterEntry> entries = roster.getEntries();
+        List<RosterEntry> entries = getFilteredEntries();
         int startIndex = currentPage * SLOTS_PER_PAGE * 2;
 
         for (int side = 0; side < 2; side++) {
@@ -153,7 +237,17 @@ public class RosterViewScreen extends Screen {
                 int col = i % SLOTS_PER_ROW;
 
                 int slotX = baseX + GRID_LEFT_OFFSET + col * (SLOT_SIZE + SLOT_SPACING);
-                int slotY = topPos + GRID_TOP_OFFSET + row * (SLOT_SIZE + SLOT_SPACING);
+                int slotY = topPos - 10 + GRID_TOP_OFFSET + row * (SLOT_SIZE + SLOT_SPACING + 10);
+
+                int starBtnX = slotX + SLOT_SIZE - STAR_BUTTON_SIZE;
+                int starBtnY = slotY + STAR_BUTTON_SIZE/2 - 4;
+
+                if (mouseX >= starBtnX && mouseX < starBtnX + STAR_BUTTON_SIZE &&
+                        mouseY >= starBtnY && mouseY < starBtnY + STAR_BUTTON_SIZE) {
+                    hoveredStarButton = side * SLOTS_PER_PAGE + i;
+                    hoveredSlot = side * SLOTS_PER_PAGE + i;
+                    return;
+                }
 
                 if (mouseX >= slotX && mouseX < slotX + SLOT_SIZE &&
                         mouseY >= slotY && mouseY < slotY + SLOT_SIZE) {
@@ -165,7 +259,7 @@ public class RosterViewScreen extends Screen {
     }
 
     private void renderPlayerGrid(GuiGraphics gui, float partialTick) {
-        List<RosterEntry> entries = roster.getEntries();
+        List<RosterEntry> entries = getFilteredEntries();
         int startIndex = currentPage * SLOTS_PER_PAGE * 2;
 
         for (int side = 0; side < 2; side++) {
@@ -186,7 +280,7 @@ public class RosterViewScreen extends Screen {
                 int col = i % SLOTS_PER_ROW;
 
                 int slotX = baseX + GRID_LEFT_OFFSET + col * (SLOT_SIZE + SLOT_SPACING);
-                int slotY = topPos + GRID_TOP_OFFSET + row * (SLOT_SIZE + SLOT_SPACING);
+                int slotY = topPos - 10 + GRID_TOP_OFFSET + row * (SLOT_SIZE + SLOT_SPACING + 10);
 
                 int slotIndex = side * SLOTS_PER_PAGE + i;
                 boolean isHovered = (slotIndex == hoveredSlot);
@@ -221,19 +315,20 @@ public class RosterViewScreen extends Screen {
 
         if (player != null) {
             FakeMouse mouse = fakeMice.get(slotIndex);
+            if(mouse == null){
+            fakeMice.put(slotIndex, new FakeMouse(slotX, slotY));
+            }
+            mouse = fakeMice.get(slotIndex);
 
             if (isHovered) {
-                mouse.update(partialTick, width, slotY);
+                mouse.update(partialTick, width, slotY,mouseX,mouseY);
             } else {
-                mouse.resetToCenter();
+                mouse.resetToCenter(slotX,slotY);
             }
 
             int modelX = slotX + (SLOT_SIZE - SLOT_INNER_SIZE) / 2;
             int textArea = SLOT_SIZE - SLOT_INNER_SIZE;
-            int modelY = slotY
-                    + (SLOT_SIZE - SLOT_INNER_SIZE) / 2
-                    + textArea / 4;
-
+            int modelY = slotY + (SLOT_SIZE - SLOT_INNER_SIZE) / 2 + textArea / 4;
 
             InventoryScreen.renderEntityInInventoryFollowsMouse(
                     gui,
@@ -249,22 +344,76 @@ public class RosterViewScreen extends Screen {
             String displayName = entry.getNickname().isEmpty()
                     ? player.getName().getString()
                     : entry.getNickname();
-
+            String shorten = displayName;
             if (font.width(displayName) > SLOT_SIZE - 4) {
-                displayName = font.plainSubstrByWidth(displayName, SLOT_SIZE - 8) + "...";
+                shorten = font.plainSubstrByWidth(shorten, SLOT_SIZE - 8) + "...";
             }
 
-            int nameColor = isHovered ? 0x000000 : 0x333333;
-            gui.drawString(font, displayName,
-                    slotX + SLOT_SIZE / 2,
-                    slotY + SLOT_SIZE - (SLOT_SIZE - SLOT_INNER_SIZE) / 2,
+            int nameColor = isHovered ? 0xFFFFFFFF : -2039584;
+
+            gui.drawString(font, shorten,
+                    slotX,
+                    slotY + 4 + SLOT_SIZE - (SLOT_SIZE - SLOT_INNER_SIZE) / 2,
                     nameColor);
+
+            renderStarButton(gui, entry, slotX, slotY, slotIndex);
+
+            if (isHovered) gui.setTooltipForNextFrame(Component.literal(displayName), mouseX, mouseY);
         } else {
-            gui.drawCenteredString(font, "?",
+            gui.drawString(font, "?",
                     slotX + SLOT_SIZE / 2,
                     slotY + SLOT_SIZE / 2 - 4,
-                    0x888888);
+                    -2039584);
         }
+    }
+
+    private void renderStarButton(GuiGraphics gui, RosterEntry entry, int slotX, int slotY, int slotIndex) {
+        int starBtnX = slotX + SLOT_SIZE - STAR_BUTTON_SIZE - 2;
+        int starBtnY = slotY + STAR_BUTTON_SIZE/2 - 4;
+
+        boolean isHovered = (slotIndex == hoveredStarButton);
+        boolean isStarred = entry.isStarred();
+
+        int bgColor = isHovered ? 0xFFFFD700 : (isStarred ? 0xFFFFA500 : 0x88444444);
+
+        String star = isStarred ? "★" : "☆";
+        gui.drawCenteredString(font, star,
+                starBtnX + STAR_BUTTON_SIZE / 2,
+                starBtnY ,
+                bgColor);
+    }
+
+    @Override
+    public boolean mouseClicked(@NotNull MouseButtonEvent mouseButtonEvent, boolean button) {
+
+        for (GroupBookmark bookmark : groupBookmarks.reversed()) {
+            if (mouseX >= bookmark.x && mouseX < bookmark.x + BOOKMARK_WIDTH &&
+                    mouseY >= bookmark.y && mouseY < bookmark.y + BOOKMARK_HEIGHT) {
+                selectedGroup = bookmark.group;
+                currentPage = 0;
+                hoveredSlot = -1;
+                init();
+                return true;
+            }
+        }
+
+        if (hoveredStarButton >= 0) {
+            List<RosterEntry> entries = getFilteredEntries();
+            int startIndex = currentPage * SLOTS_PER_PAGE * 2;
+            int globalIndex = startIndex + hoveredStarButton;
+
+            if (globalIndex < entries.size()) {
+                RosterEntry entry = entries.get(globalIndex);
+                entry.setStarred(!entry.isStarred());
+                init();
+                return true;
+            }
+        }
+
+        return super.mouseClicked(mouseButtonEvent, button);
+    }
+
+    private record GroupBookmark(String group, int x, int y) {
     }
 
     private static class FakeMouse {
@@ -275,31 +424,25 @@ public class RosterViewScreen extends Screen {
         long lastChange = 0;
         float defaultX = 0;
         float defaultY = 0;
-        public FakeMouse(int screenWidth, int screenHeight){
-            defaultX = ThreadLocalRandom.current().nextInt(0,screenWidth);
-            defaultY = ThreadLocalRandom.current().nextInt(0,screenHeight/2);
+
+        public FakeMouse(int defaultX, int defaultY) {
+            this.defaultX = defaultX;
+            this.defaultY = defaultY;
             fakeX = defaultX;
             fakeY = defaultY;
         }
-        void update(float partialTick, int screenWidth, int gridY) {
+
+        void update(float partialTick, int screenWidth, int gridY, int mouseX, int mouseY) {
             long now = System.currentTimeMillis();
 
-            if (now - lastChange > 1500 + (int)(Math.random() * 1000)) {
+            if (now - lastChange > 1500 + (int) (Math.random() * 1000)) {
                 lastChange = now;
-                float cx = screenWidth / 2f;
-                float gridHeight = SLOTS_PER_COL * SLOT_SIZE
-                        + (SLOTS_PER_COL - 1) * SLOT_SPACING;
-
-                float cy = gridY + gridHeight / 2f;
-
                 if (Math.random() < 0.3) {
-                    targetX = cx;
-                    targetY = cy;
+                    targetX = defaultX;
+                    targetY = defaultY;
                 } else {
-                    double angle = Math.random() * Math.PI * 2;
-                    double r = 0.2 + Math.random() * 0.25;
-                    targetX = (float)(cx + Math.cos(angle) * screenWidth * r);
-                    targetY = (float)(cy + Math.sin(angle) * gridY * r);
+                    targetX = ThreadLocalRandom.current().nextInt(0,screenWidth);
+                            targetY = ThreadLocalRandom.current().nextInt((int) ((float) gridY -5), (int) ((float) gridY +5));
                 }
             }
 
@@ -308,8 +451,7 @@ public class RosterViewScreen extends Screen {
             fakeY += (targetY - fakeY) * speed;
         }
 
-        void resetToCenter() {
-
+        void resetToCenter(int defaultX, int defaultY) {
             fakeX += (defaultX - fakeX) * 0.15f;
             fakeY += (defaultY - fakeY) * 0.15f;
         }

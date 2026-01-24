@@ -33,15 +33,39 @@ public class CategoryCommand {
                                 .then(Commands.argument("categoryName", StringArgumentType.string())
                                         .then(Commands.argument("maxCharacters", IntegerArgumentType.integer(0, 100))
                                                 .then(Commands.argument("canUseRoster", BoolArgumentType.bool())
-                                                        .executes(ctx -> createCategory(ctx, 1, 0))
-                                                        .then(Commands.argument("rosterLevel", IntegerArgumentType.integer(1))
-                                                                .executes(ctx -> createCategory(ctx, IntegerArgumentType.getInteger(ctx, "rosterLevel"), 0))
-                                                                .then(Commands.argument("priority", IntegerArgumentType.integer())
+                                                        .then(Commands.argument("displayJoinLeave", BoolArgumentType.bool())
+
+                                                                .executes(ctx -> createCategory(ctx, 1, 0))
+
+                                                                .then(Commands.argument("rosterLevel", IntegerArgumentType.integer(0, 2))
+
                                                                         .executes(ctx -> createCategory(
-                                                                                ctx, IntegerArgumentType.getInteger(ctx, "rosterLevel"), IntegerArgumentType.getInteger(ctx, "priority")))))
-                                                        .then(Commands.argument("priority", IntegerArgumentType.integer())
-                                                                .executes(ctx -> createCategory(
-                                                                        ctx, 1, IntegerArgumentType.getInteger(ctx, "priority")))))))))
+                                                                                ctx,
+                                                                                IntegerArgumentType.getInteger(ctx, "rosterLevel"),
+                                                                                0))
+
+                                                                        .then(Commands.argument("priority", IntegerArgumentType.integer())
+
+                                                                                .executes(ctx -> createCategory(
+                                                                                        ctx,
+                                                                                        IntegerArgumentType.getInteger(ctx, "rosterLevel"),
+                                                                                        IntegerArgumentType.getInteger(ctx, "priority")
+                                                                                )))
+                                                                )
+
+                                                                .then(Commands.argument("priority", IntegerArgumentType.integer())
+
+                                                                        .executes(ctx -> createCategory(
+                                                                                ctx,
+                                                                                1,
+                                                                                IntegerArgumentType.getInteger(ctx, "priority")
+                                                                        )))
+                                                        )
+                                                )
+                                        )
+                                )
+                        )
+                )
 
                 .then(Commands.literal("delete")
                         .then(Commands.argument("categoryId", StringArgumentType.word())
@@ -66,8 +90,9 @@ public class CategoryCommand {
         String categoryName = StringArgumentType.getString(context, "categoryName");
         int maxCharacters = IntegerArgumentType.getInteger(context, "maxCharacters");
         boolean canUseRoster = BoolArgumentType.getBool(context, "canUseRoster");
+        boolean displayOnJoin = BoolArgumentType.getBool(context, "displayJoinLeave");
         boolean success = manager.createOrUpdateCategory(
-                categoryId, categoryName, maxCharacters, canUseRoster, priority, rosterLevel
+                categoryId, categoryName, maxCharacters, displayOnJoin, canUseRoster, priority, rosterLevel
         );
 
         if (success) {

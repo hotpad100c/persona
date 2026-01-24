@@ -40,7 +40,6 @@ public class Persona implements ModInitializer {
 			new CategoryCommand(memberCategoryManager).register(dispatcher);
 		});
 
-
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->{
 			characterManager.unloadPlayer(handler.getPlayer().getUUID());
 			rosterDataManager.unloadPlayer(handler.getPlayer().getUUID());
@@ -49,7 +48,6 @@ public class Persona implements ModInitializer {
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->{
 				characterManager.loadPlayer(handler.getPlayer(),handler.getPlayer().getUUID());
 				rosterDataManager.loadPlayer(handler.getPlayer(), handler.getPlayer().getUUID());
-				memberCategoryManager.addPlayerToDefault(handler.getPlayer(), handler.getPlayer().getUUID());
 				Optional<CharacterData> characterData = characterManager.getPlayerCharacters(handler.getPlayer(), handler.getPlayer().getUUID()).getCurrentCharacter();
 				characterData.ifPresent(data -> ServerPlayNetworking.send(handler.getPlayer(),new CharacterSyncS2CPayload(data)));
 			}

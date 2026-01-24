@@ -3,7 +3,9 @@
 	"package": "ml.mypals.persona.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
+		"PlayerManagerMixin",
 		"PlayerMixin",
+		"ServerGamePacketListenerImplMixin",
 		"skin.PlayerAccessor",
 		"skin.TrackedEntityAccessor"
 	],

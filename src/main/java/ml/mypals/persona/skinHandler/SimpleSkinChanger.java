@@ -140,6 +140,7 @@ public class SimpleSkinChanger {
 
         copy.removeAll(TEXTURES_KEY);
         copy.put(TEXTURES_KEY, skinProperty);
+        copy.removeAll("PersonaCharacter");
         copy.put("PersonaCharacter",new Property("persona_character_id", characterData.getCharacterId()));
 
         PropertyMap newMap = new PropertyMap(copy);

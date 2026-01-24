@@ -46,6 +46,7 @@ public class MemberCategoryManager {
                     DEFAULT_CATEGORY,
                     "DEFAULT",
                     3,
+                    false,
                     true,
                     0,
                     1
@@ -82,17 +83,18 @@ public class MemberCategoryManager {
     }
 
     public boolean createOrUpdateCategory(String categoryId, String categoryName,
-                                          int maxCharacters, boolean canUseRoster,
+                                          int maxCharacters, boolean shownOnJoin, boolean canUseRoster,
                                           int priority, int rosterLevel) {
         MemberEntry entry = categories.get(categoryId);
         if (entry != null) {
             entry.setCategoryName(categoryName);
             entry.setMaxCharacters(maxCharacters);
+            entry.setShowOnJoin(shownOnJoin);
             entry.setCanUseRoster(canUseRoster);
             entry.setPriority(priority);
             entry.setRosterLevel(rosterLevel);
         } else {
-            entry = new MemberEntry(categoryId, categoryName, maxCharacters, canUseRoster, priority, rosterLevel);
+            entry = new MemberEntry(categoryId, categoryName, maxCharacters, shownOnJoin, canUseRoster, priority, rosterLevel);
             categories.put(categoryId, entry);
         }
         saveCategories();
@@ -159,6 +161,9 @@ public class MemberCategoryManager {
 
     public boolean canPlayerUseRoster(UUID playerId) {
         return getPlayerCategory(playerId).canUseRoster();
+    }
+    public boolean shouldPlayerShouJoinMessage(UUID playerId) {
+        return getPlayerCategory(playerId).showOnJoin();
     }
 
     public boolean canCreateCharacter(UUID playerId, int currentCharacterCount) {

@@ -21,6 +21,9 @@ public class PlayerCategoryData {
     @SerializedName("max_characters")
     private int maxCharacters;
 
+    @SerializedName("shou_join_message")
+    private boolean displayOnJoin;
+
     @SerializedName("can_use_roster")
     private boolean canUseRoster;
 
@@ -33,6 +36,7 @@ public class PlayerCategoryData {
                     ByteBufCodecs.STRING_UTF8, PlayerCategoryData::getCategoryId,
                     ByteBufCodecs.STRING_UTF8, PlayerCategoryData::getCategoryName,
                     ByteBufCodecs.INT, PlayerCategoryData::getMaxCharacters,
+                    ByteBufCodecs.BOOL, PlayerCategoryData::showOnJoin,
                     ByteBufCodecs.BOOL, PlayerCategoryData::canUseRoster,
                     ByteBufCodecs.INT, PlayerCategoryData::getRosterLevel,
                     PlayerCategoryData::new
@@ -43,6 +47,7 @@ public class PlayerCategoryData {
             String categoryId,
             String categoryName,
             int maxCharacters,
+            boolean displayOnJoin,
             boolean canUseRoster,
             int rosterLevel
     ) {
@@ -50,6 +55,7 @@ public class PlayerCategoryData {
         this.categoryId = categoryId;
         this.categoryName = categoryName;
         this.maxCharacters = maxCharacters;
+        this.displayOnJoin = displayOnJoin;
         this.canUseRoster = canUseRoster;
         this.rosterLevel = rosterLevel;
     }
@@ -59,6 +65,7 @@ public class PlayerCategoryData {
         this.categoryId = category.getCategoryId();
         this.categoryName = category.getCategoryName();
         this.maxCharacters = category.getMaxCharacters();
+        this.displayOnJoin = category.showOnJoin();
         this.canUseRoster = category.canUseRoster();
         this.rosterLevel = category.getRosterLevel();
     }
@@ -89,5 +96,8 @@ public class PlayerCategoryData {
 
     public boolean canUseRoster() {
         return canUseRoster;
+    }
+    public boolean showOnJoin() {
+        return displayOnJoin;
     }
 }

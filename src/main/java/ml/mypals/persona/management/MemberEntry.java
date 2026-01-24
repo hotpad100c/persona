@@ -15,6 +15,9 @@ public class MemberEntry {
     @SerializedName("max_characters")
     private int maxCharacters;//Max character number
 
+    @SerializedName("shou_join_message")
+    private boolean displayOnJoin;
+
     @SerializedName("can_use_roster")
     private boolean canUseRoster;
 
@@ -27,14 +30,15 @@ public class MemberEntry {
     @SerializedName("members")
     private List<String> members;
 
-    public MemberEntry(String categoryId, String categoryName, int maxCharacters, boolean canUseRoster, int rosterLevel) {
-        this(categoryId, categoryName, maxCharacters, canUseRoster, 0, rosterLevel);
+    public MemberEntry(String categoryId, String categoryName, int maxCharacters,  boolean displayOnJoin, boolean canUseRoster, int rosterLevel) {
+        this(categoryId, categoryName, maxCharacters, displayOnJoin, canUseRoster, 0, rosterLevel);
     }
 
-    public MemberEntry(String categoryId, String categoryName, int maxCharacters, boolean canUseRoster, int priority, int rosterLevel) {
+    public MemberEntry(String categoryId, String categoryName, int maxCharacters, boolean displayOnJoin, boolean canUseRoster, int priority, int rosterLevel) {
         this.categoryId = categoryId;
         this.categoryName = categoryName;
         this.maxCharacters = maxCharacters;
+        this.displayOnJoin = displayOnJoin;
         this.canUseRoster = canUseRoster;
         this.priority = priority;
         this.rosterLevel = rosterLevel;
@@ -66,7 +70,9 @@ public class MemberEntry {
     public void setMaxCharacters(int maxCharacters) {
         this.maxCharacters = maxCharacters;
     }
-
+    public void setShowOnJoin(boolean showOnJoin) {
+        this.displayOnJoin = showOnJoin;
+    }
     public void setCanUseRoster(boolean canUseRoster) {
         this.canUseRoster = canUseRoster;
     }
@@ -80,6 +86,9 @@ public class MemberEntry {
     }
     public void setCategoryName(String categoryName) {
         this.categoryName = categoryName;
+    }
+    public boolean showOnJoin() {
+        return displayOnJoin;
     }
     public boolean addMember(UUID playerId) {
         String id = playerId.toString();
