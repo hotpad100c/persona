@@ -40,7 +40,7 @@ public class PersonaClient implements ClientModInitializer {
 
 			FakePlayerFactory.clearCache();
 		});
-		HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, Identifier.fromNamespaceAndPath(MOD_ID,"character_name"), CharacterNameHud::render);
+		HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, Identifier.fromNamespaceAndPath(MOD_ID, "character_name"), CharacterNameHud::render);
 	}
 	public static ClientRosterDataManager getRosterDataManager(){
 		return playerRosterData;

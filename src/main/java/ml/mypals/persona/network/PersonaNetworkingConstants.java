@@ -13,6 +13,7 @@ public class PersonaNetworkingConstants {
     public static final Identifier ROSTER_SYNC_C2S = Identifier.fromNamespaceAndPath(MOD_ID, "roster_sync_c2s");
     public static final Identifier ROSTER_REQUEST_C2S = Identifier.fromNamespaceAndPath(MOD_ID, "roster_request_c2s");
 
+    public static final Identifier ROSTER_DELTA_SYNC_C2S = Identifier.fromNamespaceAndPath(MOD_ID, "roster_delta_sync_c2s");
     public static final Identifier ROSTER_DELTA_SYNC_S2C = Identifier.fromNamespaceAndPath(MOD_ID, "roster_delta_sync_s2c");
     public static final Identifier CHARACTER_SYNC = Identifier.fromNamespaceAndPath(MOD_ID, "character_sync");
 
