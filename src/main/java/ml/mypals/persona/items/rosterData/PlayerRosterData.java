@@ -75,7 +75,6 @@ public class PlayerRosterData {
 
     public boolean removeEntry(String playerId, String characterId) {
         return entries.removeIf(e ->
-                e.getPlayerId().equals(playerId) &&
                         e.getCharacterId().equals(characterId)
         );
     }

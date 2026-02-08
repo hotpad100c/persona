@@ -29,7 +29,7 @@ public class ClientCharacterManager {
         this.currentCharacter = newChar;
         this.currentPlayerId = UUID.fromString(newChar.getCorrespondingPlayer());
         PersonaClient.getRosterDataManager().loadFromCache(newChar.getCorrespondingPlayer(),newChar.getCharacterId());
-
+        PersonaClient.getBookMarkManager().loadFromCache(newChar.getCharacterId());
     }
 
     public void clear() {

@@ -1,23 +1,30 @@
 package ml.mypals.persona.screen;
 
+import ml.mypals.persona.PersonaClient;
+import ml.mypals.persona.characterData.CharacterData;
 import ml.mypals.persona.items.rosterData.PlayerRosterData;
 import ml.mypals.persona.items.rosterData.RosterEntry;
+import ml.mypals.persona.network.packets.roster.RosterDeltaSyncC2SPayload;
+import ml.mypals.persona.roster.BookMarkManager;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
-import net.minecraft.client.gui.screens.inventory.PageButton;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
-import java.awt.*;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
 import static ml.mypals.persona.Persona.MOD_ID;
 import static ml.mypals.persona.fakePlayer.FakePlayerFactory.*;
+import static ml.mypals.persona.screen.RosterRecordScreen.DEFAULT_NARRATION;
 
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -29,6 +36,50 @@ public class RosterViewScreen extends Screen {
 
     private static final Identifier BOOK_LOCATION =
             Identifier.fromNamespaceAndPath(MOD_ID,"textures/gui/roster_page.png");
+
+    private static final Identifier BOOKMARK_1 =
+            Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/bookmark_1.png");
+
+    private static final Identifier BOOKMARK_2 =
+            Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/bookmark_2.png");
+
+    private static final Identifier BOOKMARK_3 =
+            Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/bookmark_3.png");
+
+    private static final Identifier BOOKMARK_4 =
+            Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/bookmark_4.png");
+
+    private static final Identifier BOOKMARK_5 =
+            Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/bookmark_5.png");
+
+    private static final Identifier BOOKMARK_6 =
+            Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/bookmark_6.png");
+
+    private static final Identifier BOOKMARK_7 =
+            Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/bookmark_7.png");
+
+    private static final Identifier BOOKMARK_8 =
+            Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/bookmark_8.png");
+
+    private static final Identifier CHARACTER_ADD =
+            Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/character_add.png");
+
+    private static final Identifier CHARACTER_BG =
+            Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/character_bg.png");
+
+    private static final Identifier CHARACTER_BG_HIGHLIGHT =
+            Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/character_bg_h.png");
+
+    private static final Identifier PLAYER_NAME_BOX =
+            Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/player_name_box.png");
+
+    private static final Identifier SEARCH =
+            Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/search.png");
+
+
+    private static final Identifier BOOKMARK =
+            Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/bookmark.png");
+
 
     private static final int PAGE_WIDTH = 140;
     private static final int PAGE_HEIGHT = 163;
@@ -42,8 +93,8 @@ public class RosterViewScreen extends Screen {
     private static final int SLOTS_PER_COL = 3;
     private static final int SLOTS_PER_PAGE = SLOTS_PER_ROW * SLOTS_PER_COL;
 
-    private static final int BOOKMARK_WIDTH = 40;
-    private static final int BOOKMARK_HEIGHT = 12;
+    private static final int BOOKMARK_WIDTH = 27;
+    private static final int BOOKMARK_HEIGHT = 11;
     private static final int BOOKMARK_SPACING = 1;
     private static final int STAR_BUTTON_SIZE = 12;
 
@@ -56,10 +107,12 @@ public class RosterViewScreen extends Screen {
     private int hoveredSlot = -1;
     private int hoveredStarButton = -1;
 
-    private PageButton flipLeft;
-    private PageButton flipRight;
-
+    private RosterPageButton flipLeft;
+    private RosterPageButton flipRight;
     private String selectedGroup = "all";
+    private String searchText = "";
+    private EditBox searchBox;
+    private Button editBookmark;
     private List<String> availableGroups = new ArrayList<>();
     private List<GroupBookmark> groupBookmarks = new ArrayList<>();
 
@@ -71,10 +124,45 @@ public class RosterViewScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        //TODO Sync changes with the server.
         int totalWidth = PAGE_WIDTH * 2 + PAGE_GAP;
         leftPos = (this.width - totalWidth) / 2;
         topPos = (this.height - PAGE_HEIGHT) / 2;
+
+        searchBox = new EditBox(this.font,leftPos + 25, topPos - 14, 80, 18,Component.literal(""));
+        searchBox.setTextColor(0xFFaa8979);
+        searchBox.setBordered(false);
+        searchBox.setFocused(true);
+        searchBox.setResponder(text -> {
+            searchText = text;
+            this.currentPage = 0;
+            this.hoveredSlot = -1;
+            int entryCount = getFilteredEntries().size();
+            totalPages = Math.max(1, (int) Math.ceil((double) entryCount / (SLOTS_PER_PAGE * 2)));
+
+        });
+
+        editBookmark = new net.minecraft.client.gui.components.Button.Plain(
+                leftPos + 160,
+                topPos-33,
+                28, 41,
+                Component.literal(""),
+                b-> {
+                    Minecraft.getInstance().setScreen(new BookmarkManagerScreen(this.roster));
+                },
+                DEFAULT_NARRATION) {
+            @Override
+            protected void renderContents(@NotNull GuiGraphics guiGraphics, int i, int j, float f) {
+                guiGraphics.blit(
+                        RenderPipelines.GUI_TEXTURED,
+                        BOOKMARK, this.getX(), this.getY()-(this.isActive() && this.isHovered? 2:0),
+                        0, 0, this.getWidth(), this.getHeight(),
+                        this.getWidth(), this.getHeight());
+            }
+
+        };
+
+        this.addRenderableWidget(editBookmark);
+        this.addRenderableWidget(searchBox);
 
         collectGroups();
 
@@ -86,17 +174,17 @@ public class RosterViewScreen extends Screen {
         fakeMice.clear();
 
         if (totalPages > 1) {
-            int btnY = topPos + PAGE_HEIGHT - 10;
+            int btnY = topPos + PAGE_HEIGHT + 10;
             int btnWidth = 60;
 
-            flipLeft = this.addRenderableWidget(new PageButton(leftPos + 20, btnY, false, b -> {
+            flipLeft = this.addRenderableWidget(new RosterPageButton(leftPos + 20, btnY, false, b -> {
                 if (currentPage > 0) {
                     currentPage--;
                     hoveredSlot = -1;
                 }
             }, true));
 
-            flipRight = this.addRenderableWidget(new PageButton(leftPos + 20 + totalWidth - btnWidth, btnY, true, b -> {
+            flipRight = this.addRenderableWidget(new RosterPageButton(leftPos + 20 + totalWidth - btnWidth, btnY, true, b -> {
                 if (currentPage < totalPages - 1) {
                     currentPage++;
                     hoveredSlot = -1;
@@ -109,8 +197,9 @@ public class RosterViewScreen extends Screen {
         availableGroups.clear();
         availableGroups.add("all");
 
-        roster.getEntries().stream()
-                .map(RosterEntry::getGroup)
+        BookMarkManager bookMarkManager = PersonaClient.getBookMarkManager();
+        if(bookMarkManager == null) return;
+        bookMarkManager.getActiveMarks().stream()
                 .distinct()
                 .filter(g -> g != null && !g.isEmpty())
                 .forEach(availableGroups::add);
@@ -118,7 +207,7 @@ public class RosterViewScreen extends Screen {
 
     private void createGroupBookmarks() {
         groupBookmarks.clear();
-        int bookmarkX = leftPos - BOOKMARK_WIDTH+5;
+        int bookmarkX = leftPos - BOOKMARK_WIDTH + 8;
         int startY = topPos + 20;
         int availableHeight = PAGE_HEIGHT - 40;
 
@@ -141,9 +230,22 @@ public class RosterViewScreen extends Screen {
         List<RosterEntry> entries = new ArrayList<>(roster.getEntries());
 
         entries.sort((a, b) -> Boolean.compare(b.isStarred(), a.isStarred()));
+
         if (!"all".equals(selectedGroup)) {
             entries = entries.stream()
                     .filter(e -> selectedGroup.equals(e.getGroup()))
+                    .collect(Collectors.toList());
+        }
+
+        if (searchText != null && !searchText.trim().isEmpty()) {
+            String searchLower = searchText.toLowerCase().trim();
+            entries = entries.stream()
+                    .filter(e -> {
+                        String nickname = e.getNickname();
+                        String group = e.getGroup();
+                        return (nickname != null && nickname.toLowerCase().contains(searchLower)) ||
+                                (group != null && group.toLowerCase().contains(searchLower));
+                    })
                     .collect(Collectors.toList());
         }
 
@@ -158,8 +260,8 @@ public class RosterViewScreen extends Screen {
     @Override
     public void render(@NotNull GuiGraphics gui, int mouseX, int mouseY, float partialTick) {
 
-        renderGroupBookmarks(gui, mouseX, mouseY);
         renderBookPages(gui);
+        renderGroupBookmarks(gui, mouseX, mouseY);
         String pageText = (currentPage + 1) + " / " + totalPages;
         gui.drawCenteredString(font, pageText, this.width / 2 +3, topPos + PAGE_HEIGHT + 10, 0xFFAAAAAA);
 
@@ -171,6 +273,9 @@ public class RosterViewScreen extends Screen {
 
         this.mouseX = mouseX;
         this.mouseY = mouseY;
+
+        gui.blit(RenderPipelines.GUI_TEXTURED,SEARCH,leftPos + 25, topPos - 18, 0, 0,100,18,100,18);
+
         super.render(gui, mouseX, mouseY, partialTick);
     }
 
@@ -180,17 +285,25 @@ public class RosterViewScreen extends Screen {
             boolean isHovered = mouseX >= bookmark.x && mouseX < bookmark.x + BOOKMARK_WIDTH &&
                     mouseY >= bookmark.y && mouseY < bookmark.y + BOOKMARK_HEIGHT;
 
-            int hash = bookmark.hashCode();
-            float hue = (hash & 0xFFFF) / 65535f;
-            float saturation = 0.5f;
-            float brightness = isHovered ? 1.0f : 0.8f;
-            int rgb = Color.HSBtoRGB(hue, saturation, brightness);
-            int borderColor = isHovered || isSelected ?0x88FFFFFF : 0x66FFFFFF;
+            int index = Math.floorMod(bookmark.group.hashCode(), 8);
 
-            int posX = bookmark.x - (isHovered || isSelected?4:0);
+            Identifier texture = switch (index) {
+                case 0 -> BOOKMARK_1;
+                case 1 -> BOOKMARK_2;
+                case 2 -> BOOKMARK_3;
+                case 3 -> BOOKMARK_4;
+                case 4 -> BOOKMARK_5;
+                case 5 -> BOOKMARK_6;
+                case 6 -> BOOKMARK_7;
+                default -> BOOKMARK_8;
+            };
 
-            gui.fill(posX, bookmark.y, bookmark.x + BOOKMARK_WIDTH, bookmark.y + BOOKMARK_HEIGHT, rgb);
-            gui.fill(posX, bookmark.y + BOOKMARK_HEIGHT - 1, bookmark.x + BOOKMARK_WIDTH, bookmark.y + BOOKMARK_HEIGHT, borderColor);
+
+            int delta = (isHovered || isSelected?4:0);
+            int posX = bookmark.x - delta;
+
+            gui.blit(RenderPipelines.GUI_TEXTURED,texture,posX, bookmark.y, 0, 0,BOOKMARK_WIDTH+delta,BOOKMARK_HEIGHT,BOOKMARK_WIDTH+delta,BOOKMARK_HEIGHT);
+
 
             String displayText = bookmark.group.equals("all") ? "All" : bookmark.group;
             String shorten = displayText;
@@ -201,7 +314,7 @@ public class RosterViewScreen extends Screen {
             }
 
             gui.drawString(font, shorten,
-                    posX+2,
+                    posX+4,
                     bookmark.y + (BOOKMARK_HEIGHT - font.lineHeight) / 2+1,
                     -2039584);
         }
@@ -291,21 +404,14 @@ public class RosterViewScreen extends Screen {
     }
 
     private void renderPlayerSlot(GuiGraphics gui, float partialTick, RosterEntry entry,
-                                  int slotX, int slotY, int slotIndex, boolean isHovered) {
-        int hash = entry.getCharacterId().hashCode();
-        float hue = (hash & 0xFFFF) / 65535f;
-        float saturation = 0.45f;
-        float brightness = isHovered ? 1.0f : 0.85f;
-        int rgb = Color.HSBtoRGB(hue, saturation, brightness) & 0x00FFFFFF;
-        int alpha = isHovered ? 0xAA : 0x66;
-        int bgColor = (alpha << 24) | rgb;
-        int borderColor = isHovered ? 0xFF000000 : 0x88000000;
+                                  int sX, int sY, int slotIndex, boolean isHovered) {
 
-        gui.fill(slotX, slotY, slotX + SLOT_SIZE, slotY + SLOT_SIZE, bgColor);
-        gui.fill(slotX, slotY, slotX + SLOT_SIZE, slotY + 1, borderColor);
-        gui.fill(slotX, slotY, slotX + 1, slotY + SLOT_SIZE, borderColor);
-        gui.fill(slotX + SLOT_SIZE - 1, slotY, slotX + SLOT_SIZE, slotY + SLOT_SIZE, borderColor);
-        gui.fill(slotX, slotY + SLOT_SIZE - 1, slotX + SLOT_SIZE, slotY + SLOT_SIZE, borderColor);
+        int slotX = sX - (isHovered?2:0);
+        int slotY = sY - (isHovered?2:0);
+
+        gui.blit(RenderPipelines.GUI_TEXTURED,isHovered?CHARACTER_BG_HIGHLIGHT:CHARACTER_BG,slotX, slotY, 0, 0,SLOT_SIZE,SLOT_SIZE,SLOT_SIZE,SLOT_SIZE);
+
+        gui.blit(RenderPipelines.GUI_TEXTURED,PLAYER_NAME_BOX,sX, sY+SLOT_SIZE+1, 0, 0,SLOT_SIZE,9,SLOT_SIZE,9);
 
         AbstractClientPlayer player = getOrGenerateFakePlayer(
                 minecraft.level,
@@ -345,24 +451,27 @@ public class RosterViewScreen extends Screen {
                     ? player.getName().getString()
                     : entry.getNickname();
             String shorten = displayName;
-            if (font.width(displayName) > SLOT_SIZE - 4) {
-                shorten = font.plainSubstrByWidth(shorten, SLOT_SIZE - 8) + "...";
+            if (font.width(displayName) > SLOT_SIZE) {
+                shorten = font.plainSubstrByWidth(shorten, SLOT_SIZE - 4) + "...";
             }
 
-            int nameColor = isHovered ? 0xFFFFFFFF : -2039584;
+            int nameColor = isHovered ? 0xFFFFFFFF : 0xFFaa8979;
 
-            gui.drawString(font, shorten,
-                    slotX,
-                    slotY + 4 + SLOT_SIZE - (SLOT_SIZE - SLOT_INNER_SIZE) / 2,
-                    nameColor);
-
+            gui.pose().pushMatrix();
+            int y = sY + 5 + SLOT_SIZE - (SLOT_SIZE - SLOT_INNER_SIZE) / 2;
+            int x = sX + SLOT_SIZE/2;
+            gui.pose().translate(x,y);
+            gui.pose().scale(0.75f);
+            gui.pose().translate(-x,-y);
+            gui.drawString(font, shorten, x - font.width(shorten) / 2, y, nameColor,isHovered);
+            gui.pose().popMatrix();
             renderStarButton(gui, entry, slotX, slotY, slotIndex);
 
             if (isHovered) gui.setTooltipForNextFrame(Component.literal(displayName), mouseX, mouseY);
         } else {
             gui.drawString(font, "?",
-                    slotX + SLOT_SIZE / 2,
-                    slotY + SLOT_SIZE / 2 - 4,
+                    sX + SLOT_SIZE / 2,
+                    sY + SLOT_SIZE / 2 - 4,
                     -2039584);
         }
     }
@@ -405,7 +514,27 @@ public class RosterViewScreen extends Screen {
             if (globalIndex < entries.size()) {
                 RosterEntry entry = entries.get(globalIndex);
                 entry.setStarred(!entry.isStarred());
+
+                Optional<CharacterData> characterDataOptional = PersonaClient.getCharacterManager().getCurrentCharacter();
+                characterDataOptional.ifPresent(characterData1 -> {
+                    ClientPlayNetworking.send(
+                            new RosterDeltaSyncC2SPayload(List.of(entry),List.of(),characterData1.getCharacterId())
+                    );
+                });
+                PersonaClient.getRosterDataManager().saveToCache();
+
                 init();
+                return true;
+            }
+        }
+        if(hoveredSlot>=0){
+            List<RosterEntry> entries = getFilteredEntries();
+            int startIndex = currentPage * SLOTS_PER_PAGE * 2;
+            int globalIndex = startIndex + hoveredSlot;
+            if (globalIndex < entries.size()) {
+                RosterEntry entry = entries.get(globalIndex);
+                Minecraft.getInstance().setScreen(new RosterRecordScreen(entry));
+
                 return true;
             }
         }

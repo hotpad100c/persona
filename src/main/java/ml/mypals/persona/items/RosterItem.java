@@ -115,7 +115,7 @@ public class RosterItem extends Item {
         CharacterData targetCharacter = targetData.getCurrentCharacter().get();
 
         ServerPlayNetworking.send(serverUser, new AddToRosterS2CPayload(
-                new AddCharacterToRosterData(targetCharacter.getCorrespondingPlayer(), targetCharacter.getCustomName()))
+                new AddCharacterToRosterData(targetCharacter.getCorrespondingPlayer(), targetCharacter.getCustomName(), ""))
         );
 
         return InteractionResult.SUCCESS;

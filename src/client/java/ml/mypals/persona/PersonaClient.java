@@ -8,6 +8,7 @@ import ml.mypals.persona.management.PlayerCategoryData;
 import ml.mypals.persona.network.ClientPacketRegister;
 import ml.mypals.persona.network.packets.roster.AddToRosterC2SPayload;
 import ml.mypals.persona.network.packets.roster.RosterRequestC2SPayload;
+import ml.mypals.persona.roster.BookMarkManager;
 import ml.mypals.persona.roster.ClientCharacterManager;
 import ml.mypals.persona.roster.ClientRosterDataManager;
 import ml.mypals.persona.screen.CharacterNameHud;
@@ -26,14 +27,14 @@ public class PersonaClient implements ClientModInitializer {
 	public static PlayerCategoryData playerCategoryData;
 	private static ClientCharacterManager characterManager;
 	private static ClientRosterDataManager playerRosterData;
+	private static BookMarkManager bookMarkManager;
 	@Override
 	public void onInitializeClient() {
 		ClientPacketRegister.initialize();
 		characterManager = new ClientCharacterManager();
 		playerRosterData = new ClientRosterDataManager();
-		ClientPlayConnectionEvents.JOIN.register((clientPacketListener, packetSender, minecraft) -> {
-			//NO OP?
-		});
+		bookMarkManager = new BookMarkManager();
+
 		ClientPlayConnectionEvents.DISCONNECT.register((clientPacketListener,minecraft) -> {
 			characterManager.clear();
 			playerRosterData.clear();
@@ -47,5 +48,8 @@ public class PersonaClient implements ClientModInitializer {
 	}
 	public static ClientCharacterManager getCharacterManager(){
 		return characterManager;
+	}
+	public static BookMarkManager getBookMarkManager(){
+		return bookMarkManager;
 	}
 }

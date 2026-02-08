@@ -5,8 +5,9 @@ import ml.mypals.persona.PersonaClient;
 import ml.mypals.persona.items.rosterData.PlayerRosterData;
 import ml.mypals.persona.items.rosterData.RosterEntry;
 import ml.mypals.persona.network.packets.roster.RosterDeltaSyncS2CPayload;
-import ml.mypals.persona.network.packets.roster.RosterSyncS2CPayload;
+//import ml.mypals.persona.network.packets.roster.RosterSyncS2CPayload;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.Minecraft;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -46,7 +47,13 @@ public class ClientRosterDataManager {
         this.currentCharacterId = characterId;
         Path path = getCacheFilePath(playerUUID, characterId);
         if (!Files.exists(path)) {
-            return;
+            try {
+                Files.createDirectories(path.getParent());
+                Files.createFile(path);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return;
+            }
         }
 
         try (Reader reader = Files.newBufferedReader(path)) {
@@ -62,11 +69,9 @@ public class ClientRosterDataManager {
             try { Files.deleteIfExists(path); } catch (Exception ignored) {}
         }
     }
-    private void refreshUUIDToNameCache(){
 
-    }
 
-    private void saveToCache() {
+    public void saveToCache() {
         if (currentRoster == null || currentOwnerPlayerId == null || currentCharacterId == null) {
             return;
         }
@@ -76,6 +81,23 @@ public class ClientRosterDataManager {
             GSON.toJson(currentRoster, writer);
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void removeEntry(String charId){
+        if (currentCharacterId == null) {
+            return;
+        }
+
+        if (currentRoster == null) {
+            PersonaClient.getCharacterManager().getCurrentCharacter().ifPresent(characterData -> {
+                currentRoster = new PlayerRosterData(characterData);
+            });
+            if(currentRoster == null) return;
+        }
+
+        if(currentRoster.removeEntry(currentRoster.getOwnerRawId(), charId)) {
+            saveToCache();
         }
     }
 

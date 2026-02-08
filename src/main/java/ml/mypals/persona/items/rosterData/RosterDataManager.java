@@ -6,9 +6,9 @@ import com.google.gson.GsonBuilder;
 import com.mojang.authlib.properties.Property;
 import ml.mypals.persona.Persona;
 import ml.mypals.persona.characterData.CharacterData;
+import ml.mypals.persona.characterData.CharacterManager;
 import ml.mypals.persona.characterData.CharacterSkin;
-import ml.mypals.persona.network.packets.roster.RosterSyncS2CPayload;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import ml.mypals.persona.network.packets.roster.RosterDeltaSyncC2SPayload;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -18,10 +18,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class RosterDataManager {
@@ -172,7 +169,7 @@ public class RosterDataManager {
 
     public void loadCharacterRoster(ServerPlayer serverPlayer, CharacterData owner) {
         PlayerRosterData playerRosterData = getPlayerRoster(owner);
-        if(playerRosterData != null) ServerPlayNetworking.send(serverPlayer, new RosterSyncS2CPayload(playerRosterData));
+        //if(playerRosterData != null) ServerPlayNetworking.send(serverPlayer, new RosterSyncS2CPayload(playerRosterData));
     }
 
     public void unloadPlayer(UUID playerId) {
@@ -189,4 +186,79 @@ public class RosterDataManager {
         Optional<CharacterData> characterData = Persona.getCharacterManager().getPlayerCharacters(owner, ownerId).getCurrentCharacter();
         characterData.ifPresent(cd->loadCharacterRoster(owner,cd));
     }
+
+    public void handleClientSync(
+            ServerPlayer player,
+            RosterDeltaSyncC2SPayload payload
+    ) {
+        CharacterManager characterManager = Persona.getCharacterManager();
+        RosterDataManager rosterDataManager = Persona.getRosterDataManager();
+
+        Optional<CharacterData> optCharData = characterManager
+                .getPlayerCharacters(player, player.getUUID())
+                .getCurrentCharacter();
+
+        if (optCharData.isEmpty()) {
+            return;
+        }
+
+        CharacterData currentChar = optCharData.get();
+
+        String payloadCharId = payload.ownerCharacterId();
+        if (!currentChar.getCharacterId().equals(payloadCharId)) {
+            return;
+        }
+
+        PlayerRosterData serverRoster =
+                rosterDataManager.getPlayerRoster(currentChar);
+
+        boolean changed = false;
+
+        List<String> toRemoveIds = payload.toRemove();
+        if (toRemoveIds != null && !toRemoveIds.isEmpty()) {
+            for (String charId : toRemoveIds) {
+                boolean removed = serverRoster.removeEntry(
+                        serverRoster.getOwnerRawId(),
+                        charId
+                );
+                if (removed) {
+                    changed = true;
+                }
+            }
+        }
+
+
+        List<RosterEntry> toAdd = payload.toAdd();
+        if (toAdd != null && !toAdd.isEmpty()) {
+            for (RosterEntry newEntry : toAdd) {
+
+                String entryCharId = newEntry.getCharacterId();
+
+                Optional<RosterEntry> existingOpt =
+                        serverRoster.getEntry(
+                                newEntry.getPlayerId(),
+                                entryCharId
+                        );
+
+                if (existingOpt.isPresent()) {
+                    RosterEntry existing = existingOpt.get();
+                    existing.setNickname(newEntry.getNickname());
+                    existing.setNotes(newEntry.getNotes());
+                    existing.setStarred(newEntry.isStarred());
+                    existing.setGroup(newEntry.getGroup());
+                    changed = true;
+                } else {
+                    boolean added = serverRoster.addEntry(newEntry);
+                    if (added) {
+                        changed = true;
+                    }
+                }
+            }
+        }
+
+        if (changed) {
+            rosterDataManager.savePlayerRoster(currentChar);
+        }
+    }
+
 }

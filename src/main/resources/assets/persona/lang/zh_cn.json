@@ -61,5 +61,12 @@
   "persona.roster.cancel": "取消",
 
   "persona.roster.recorded": "已记录角色：%s",
-  "persona.roster.already": "这个角色已经在你的花名册中。"
-}
+  "persona.roster.already": "这个角色已经在你的花名册中。",
+
+  "persona.shift_confirm": "按下Shift解锁",
+  "persona.delete_bookmark": "删除分类",
+
+  "persona.active_marks": "启用",
+  "persona.available_marks": "可用",
+  "persona.bookmark_tip": "点击编辑，在左侧拖拽以换位，从右侧拖拽以添加到启用侧",
+  }

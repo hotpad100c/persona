@@ -62,5 +62,13 @@
   "persona.roster.cancel": "Cancel",
 
   "persona.roster.recorded": "Recorded character: %s",
-  "persona.roster.already": "This character is already in your roster."
+  "persona.roster.already": "This character is already in your roster.",
+
+  "persona.shift_confirm": "Press shift to unlock",
+  "persona.delete_bookmark": "DELETE category",
+
+  "persona.active_marks": "Active Bookmarks",
+  "persona.available_marks": "Available Bookmarks",
+  "persona.bookmark_tip": "Click to Edit, drag to reorder, drag from right to add"
+
 }

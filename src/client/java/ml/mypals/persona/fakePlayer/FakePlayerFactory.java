@@ -13,6 +13,7 @@ import net.minecraft.client.gui.render.pip.GuiSkinRenderer;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
+import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.client.resources.SkinManager;
 import net.minecraft.world.entity.player.PlayerModelPart;
 import net.minecraft.world.entity.player.PlayerSkin;
@@ -56,7 +57,8 @@ public class FakePlayerFactory {
         AbstractClientPlayer player = new AbstractClientPlayer(clientLevel, profileWithSkin) {
             @Override
             public @NotNull PlayerSkin getSkin() {
-                return skinSuppliers.get(characterId).get();
+                PlayerSkin playerSkin = skinSuppliers.get(characterId).get();
+                return playerSkin != null?playerSkin: DefaultPlayerSkin.getDefaultSkin();
             }
             @Override
             public boolean isModelPartShown(@NotNull PlayerModelPart playerModelPart) {

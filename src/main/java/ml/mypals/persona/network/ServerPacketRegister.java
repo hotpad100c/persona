@@ -25,13 +25,15 @@ import java.util.stream.Collectors;
 
 public class ServerPacketRegister {
     public static void initialize(){
-        PayloadTypeRegistry.playS2C().register(PlayerCategoryDataPayload.TYPE, PlayerCategoryDataPayload.STREAM_CODEC);
-        PayloadTypeRegistry.playS2C().register(AddToRosterS2CPayload.TYPE, AddToRosterS2CPayload.STREAM_CODEC);
+
         PayloadTypeRegistry.playC2S().register(AddToRosterC2SPayload.TYPE, AddToRosterC2SPayload.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(RosterRequestC2SPayload.TYPE, RosterRequestC2SPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(RosterDeltaSyncC2SPayload.TYPE, RosterDeltaSyncC2SPayload.STREAM_CODEC);
+
+        PayloadTypeRegistry.playS2C().register(PlayerCategoryDataPayload.TYPE, PlayerCategoryDataPayload.STREAM_CODEC);
+        PayloadTypeRegistry.playS2C().register(AddToRosterS2CPayload.TYPE, AddToRosterS2CPayload.STREAM_CODEC);
         PayloadTypeRegistry.playS2C().register(CharacterSyncS2CPayload.TYPE,CharacterSyncS2CPayload.STREAM_CODEC);
         PayloadTypeRegistry.playS2C().register(RosterDeltaSyncS2CPayload.TYPE,RosterDeltaSyncS2CPayload.STREAM_CODEC);
-        PayloadTypeRegistry.playS2C().register(RosterDeltaSyncC2SPayload.TYPE,RosterDeltaSyncC2SPayload.STREAM_CODEC);
         PayloadTypeRegistry.playS2C().register(OpenRosterViewScreenPayload.TYPE,OpenRosterViewScreenPayload.STREAM_CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(
@@ -82,13 +84,17 @@ public class ServerPacketRegister {
                 }
         );
 
-        ServerPlayNetworking.registerGlobalReceiver(RosterDeltaSyncC2SPayload.TYPE,(payload, context)-> {
-            context.server().execute(() -> {
 
-            });
-        });
 
-        ServerPlayNetworking.registerGlobalReceiver(AddToRosterC2SPayload.TYPE,(payload, context)->{
+        ServerPlayNetworking.registerGlobalReceiver(
+                RosterDeltaSyncC2SPayload.TYPE,(payload, context)->{
+                    context.server().execute(() -> {
+                        Persona.getRosterDataManager().handleClientSync(context.player(), payload);
+                    });
+                });
+
+        ServerPlayNetworking.registerGlobalReceiver(
+                AddToRosterC2SPayload.TYPE,(payload, context)->{
             context.server().execute(() -> {
                 MinecraftServer minecraftServer = context.server();
                 ServerPlayer serverUser = context.player();
@@ -111,7 +117,7 @@ public class ServerPacketRegister {
                                 targetPlayer.getUUID(),
                                 targetCharacter.getCharacterId(),
                                 payload.data().data(),
-                                ""
+                                payload.data().memo()
                         );
                         if (success != null) {
                             serverUser.sendSystemMessage(
