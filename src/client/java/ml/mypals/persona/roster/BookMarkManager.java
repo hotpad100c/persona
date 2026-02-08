@@ -10,9 +10,9 @@ import java.io.Reader;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class BookMarkManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -107,7 +107,7 @@ public class BookMarkManager {
 
     public static class BookMarkSet {
 
-        public BookMarkSet(String ownerCharacter, ArrayList<String> activeMarks, ArrayList<String> availableMarks) {
+        public BookMarkSet(String ownerCharacter, CopyOnWriteArrayList<String> activeMarks, CopyOnWriteArrayList<String> availableMarks) {
             this.ownerCharacter = ownerCharacter;
             this.activeMarks = activeMarks;
             this.availableMarks = availableMarks;
@@ -115,28 +115,28 @@ public class BookMarkManager {
 
         public BookMarkSet(String ownerCharacter) {
             this.ownerCharacter = ownerCharacter;
-            this.activeMarks = new ArrayList<>();
-            this.availableMarks = new ArrayList<>();
+            this.activeMarks = new CopyOnWriteArrayList<>();
+            this.availableMarks = new CopyOnWriteArrayList<>();
         }
 
         @SerializedName("owner")
         private String ownerCharacter;
 
         @SerializedName("active")
-        private ArrayList<String> activeMarks;
+        private CopyOnWriteArrayList<String> activeMarks;
 
         @SerializedName("available")
-        private ArrayList<String> availableMarks;
+        private CopyOnWriteArrayList<String> availableMarks;
 
         public String getOwnerCharacter() {
             return ownerCharacter;
         }
 
-        public ArrayList<String> getActiveMarks() {
+        public CopyOnWriteArrayList<String> getActiveMarks() {
             return activeMarks;
         }
 
-        public ArrayList<String> getAvailableMarks() {
+        public CopyOnWriteArrayList<String> getAvailableMarks() {
             return availableMarks;
         }
 

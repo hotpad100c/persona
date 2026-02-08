@@ -142,7 +142,7 @@ public class RosterViewScreen extends Screen {
         });
 
         editBookmark = new net.minecraft.client.gui.components.Button.Plain(
-                leftPos + 160,
+                leftPos + 195,
                 topPos-33,
                 28, 41,
                 Component.literal(""),
