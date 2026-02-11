@@ -32,10 +32,11 @@
   "command.persona.category.list.empty": "没有任何类别",
   "command.persona.category.list.entry": "• ",
   "command.persona.category.list.id": " [%s]",
-  "command.persona.category.list.max": "\n  最大角色数：%s",
-  "command.persona.category.list.roster": " - 花名册：%s",
-  "command.persona.category.list.priority": " - 优先级：%s",
-  "command.persona.category.list.roster_level": " - 花名册等级：%s",
+  "command.persona.category.list.max": "-最大角色数：%s",
+  "command.persona.category.list.roster": "- 花名册：%s",
+  "command.persona.category.list.priority": "- 优先级：%s",
+  "command.persona.category.list.roster_level": "- 花名册等级：%s",
+  "command.persona.category.list.display_join_leave": "- 入服提示：%s",
 
   "command.persona.category.id": "\nID：%s",
   "command.persona.category.max": "\n最大角色数：%s",
@@ -54,6 +55,7 @@
   "command.persona.player.info.max": "最大角色数：",
   "command.persona.player.info.roster": "可使用花名册：",
   "command.persona.player.info.roster_level": "花名册等级：",
+  "command.persona.player.info.display_join_leave": "入服时提示：",
 
   "persona.roster.add_player": "加入花名册",
   "persona.roster.name": "名字",

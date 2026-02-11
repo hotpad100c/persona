@@ -5,6 +5,10 @@ import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
+import ml.mypals.persona.Persona;
+import ml.mypals.persona.characterData.CharacterData;
+import ml.mypals.persona.characterData.PlayerCharacterStorage;
 import ml.mypals.persona.management.MemberCategoryManager;
 import ml.mypals.persona.management.MemberEntry;
 import net.minecraft.ChatFormatting;
@@ -14,74 +18,66 @@ import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.vehicle.minecart.Minecart;
 
+import java.util.List;
 import java.util.Map;
 
 public class CategoryCommand {
     private final MemberCategoryManager manager;
-
+    private final SuggestionProvider<CommandSourceStack> categorySuggestionProvider = (context, builder) -> {
+        MemberCategoryManager memberCategoryManager = Persona.getMemberCategoryManager();
+        for (Map.Entry<String, MemberEntry> c : memberCategoryManager.getAllCategories().entrySet()) {
+            builder.suggest(c.getValue().getCategoryId(), Component.literal(c.getValue().getCategoryName()));
+        }
+        return builder.buildFuture();
+    };
     public CategoryCommand(MemberCategoryManager manager) {
         this.manager = manager;
     }
 
     public void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("category")
-                .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_ADMIN))
-
-                .then(Commands.literal("create")
-                        .then(Commands.argument("categoryId", StringArgumentType.word())
-                                .then(Commands.argument("categoryName", StringArgumentType.string())
-                                        .then(Commands.argument("maxCharacters", IntegerArgumentType.integer(0, 100))
-                                                .then(Commands.argument("canUseRoster", BoolArgumentType.bool())
-                                                        .then(Commands.argument("displayJoinLeave", BoolArgumentType.bool())
-
-                                                                .executes(ctx -> createCategory(ctx, 1, 0))
-
-                                                                .then(Commands.argument("rosterLevel", IntegerArgumentType.integer(0, 2))
-
-                                                                        .executes(ctx -> createCategory(
-                                                                                ctx,
-                                                                                IntegerArgumentType.getInteger(ctx, "rosterLevel"),
-                                                                                0))
-
-                                                                        .then(Commands.argument("priority", IntegerArgumentType.integer())
-
-                                                                                .executes(ctx -> createCategory(
-                                                                                        ctx,
-                                                                                        IntegerArgumentType.getInteger(ctx, "rosterLevel"),
-                                                                                        IntegerArgumentType.getInteger(ctx, "priority")
-                                                                                )))
-                                                                )
-
-                                                                .then(Commands.argument("priority", IntegerArgumentType.integer())
-
-                                                                        .executes(ctx -> createCategory(
-                                                                                ctx,
-                                                                                1,
-                                                                                IntegerArgumentType.getInteger(ctx, "priority")
-                                                                        )))
-                                                        )
-                                                )
-                                        )
+            .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_ADMIN))
+            .then(Commands.literal("create")
+                .then(Commands.argument("categoryId", StringArgumentType.word())
+                    .then(Commands.argument("categoryName", StringArgumentType.string())
+                        .then(Commands.argument("maxCharacters", IntegerArgumentType.integer(0, 100))
+                            .then(Commands.argument("canUseRoster", BoolArgumentType.bool())
+                                .then(Commands.argument("displayJoinLeave", BoolArgumentType.bool())
+                                    .executes(ctx -> createCategory(ctx, 1, 0))
+                                    .then(Commands.argument("rosterLevel", IntegerArgumentType.integer(0, 2))
+                                        .executes(ctx -> createCategory(ctx, IntegerArgumentType.getInteger(ctx, "rosterLevel"), 0))
+                                        .then(Commands.argument("priority", IntegerArgumentType.integer())
+                                            .executes(ctx -> createCategory(ctx, IntegerArgumentType.getInteger(ctx, "rosterLevel"), IntegerArgumentType.getInteger(ctx, "priority")
+                                        )))
+                                    )
+                                    .then(Commands.argument("priority", IntegerArgumentType.integer())
+                                        .executes(ctx -> createCategory(ctx, 1, IntegerArgumentType.getInteger(ctx, "priority"))))
                                 )
+                            )
                         )
+                    )
                 )
+            )
+            .then(Commands.literal("delete")
+                .then(Commands.argument("categoryId", StringArgumentType.word())
+                        .suggests(categorySuggestionProvider)
+                        .executes(this::deleteCategory)))
 
-                .then(Commands.literal("delete")
-                        .then(Commands.argument("categoryId", StringArgumentType.word())
-                                .executes(this::deleteCategory)))
+            .then(Commands.literal("list")
+                .executes(this::listCategories))
 
-                .then(Commands.literal("list")
-                        .executes(this::listCategories))
-
-                .then(Commands.literal("set")
-                        .then(Commands.argument("player", EntityArgument.player())
-                                .then(Commands.argument("categoryId", StringArgumentType.word())
-                                        .executes(this::setPlayerCategory))))
-
-                .then(Commands.literal("info")
-                        .then(Commands.argument("player", EntityArgument.player())
-                                .executes(this::getPlayerInfo)))
+            .then(Commands.literal("set")
+                .then(Commands.argument("player", EntityArgument.player())
+                    .then(Commands.argument("categoryId", StringArgumentType.word())
+                            .suggests(categorySuggestionProvider)
+                            .executes(this::setPlayerCategory))))
+            .then(Commands.literal("info")
+                .then(Commands.argument("player", EntityArgument.player())
+                    .executes(this::getPlayerInfo))
+            )
         );
     }
 
@@ -161,20 +157,36 @@ public class CategoryCommand {
         categories.values().stream()
                 .sorted((a, b) -> Integer.compare(b.getPriority(), a.getPriority()))
                 .forEach(entry -> {
-                    Component line = Component.translatable("command.persona.category.list.entry")
-                            .withStyle(ChatFormatting.GRAY)
-                            .append(Component.literal(entry.getCategoryName()).withStyle(ChatFormatting.YELLOW))
-                            .append(Component.translatable("command.persona.category.list.id", entry.getCategoryId()))
-                            .append(Component.translatable("command.persona.category.list.max", entry.getMaxCharacters()))
-                            .append(Component.translatable("command.persona.category.list.roster",
+                    context.getSource().sendSystemMessage(
+                            Component.translatable("command.persona.category.list.entry")
+                                    .withStyle(ChatFormatting.GRAY)
+                                    .append(Component.literal(entry.getCategoryName()).withStyle(ChatFormatting.YELLOW))
+                    );
+
+                    context.getSource().sendSystemMessage(
+                            Component.translatable("command.persona.category.list.id", entry.getCategoryId())
+                    );
+
+                    context.getSource().sendSystemMessage(
+                            Component.translatable("command.persona.category.list.max", entry.getMaxCharacters())
+                    );
+
+                    context.getSource().sendSystemMessage(
+                            Component.translatable("command.persona.category.list.roster",
                                             entry.canUseRoster() ?
                                                     Component.translatable("command.persona.common.yes") :
                                                     Component.translatable("command.persona.common.no"))
-                                    .withStyle(entry.canUseRoster() ? ChatFormatting.GREEN : ChatFormatting.RED))
-                            .append(Component.translatable("command.persona.category.list.roster_level", entry.getRosterLevel()))
-                            .append(Component.translatable("command.persona.category.list.priority", entry.getPriority()));
+                                    .withStyle(entry.canUseRoster() ? ChatFormatting.GREEN : ChatFormatting.RED)
+                    );
 
-                    context.getSource().sendSystemMessage(line);
+                    context.getSource().sendSystemMessage(
+                            Component.translatable("command.persona.category.list.display_join_leave",
+                                            entry.showOnJoin() ?
+                                                    Component.translatable("command.persona.common.yes") :
+                                                    Component.translatable("command.persona.common.no"))
+                                    .withStyle(entry.showOnJoin() ? ChatFormatting.GREEN : ChatFormatting.RED)
+                    );
+
                 });
 
         return 1;
@@ -252,9 +264,21 @@ public class CategoryCommand {
             );
 
             context.getSource().sendSystemMessage(
+                    Component.translatable("command.persona.player.info.display_join_leave")
+                            .append(
+                                    category.showOnJoin() ?
+                                            Component.translatable("command.persona.common.yes").withStyle(ChatFormatting.GREEN) :
+                                            Component.translatable("command.persona.common.no").withStyle(ChatFormatting.RED)
+                            )
+            );
+
+
+
+            /*
+            context.getSource().sendSystemMessage(
                     Component.translatable("command.persona.player.info.roster_level")
                             .append(Component.literal(String.valueOf(category.getRosterLevel())).withStyle(ChatFormatting.GRAY))
-            );
+            );*/
 
             return 1;
         } catch (Exception e) {

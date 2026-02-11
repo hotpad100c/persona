@@ -12,6 +12,7 @@ import ml.mypals.persona.network.packets.roster.OpenRosterViewScreenPayload;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
@@ -74,6 +75,7 @@ public class RosterItem extends Item {
             }
         }
 
+        serverPlayer.playSound(SoundEvents.BOOK_PAGE_TURN);
         ServerPlayNetworking.send(serverPlayer, new OpenRosterViewScreenPayload());
         return InteractionResult.SUCCESS;
     }
@@ -95,21 +97,21 @@ public class RosterItem extends Item {
         if (targetData.getCurrentCharacter().isEmpty()) {
             serverUser.sendSystemMessage(Component.literal("The player has no characters yet")
                     .withStyle(ChatFormatting.RED));
-            return InteractionResult.FAIL;
+            return InteractionResult.PASS;
         }
 
         if (userData.getCurrentCharacter().isEmpty()) {
             serverUser.sendSystemMessage(Component.literal("You have no characters yet")
                     .withStyle(ChatFormatting.RED));
-            return InteractionResult.FAIL;
+            return InteractionResult.PASS;
         }
         PlayerRosterData rosterData = rosterDataManager.getPlayerRoster(userData.getCurrentCharacter().get());
-        if(rosterData.hasEntry(targetPlayer.getUUID().toString(), targetData.getCurrentCharacterId())){
+        if(rosterData != null && rosterData.hasEntry(targetPlayer.getUUID().toString(), targetData.getCurrentCharacterId())){
             serverUser.sendSystemMessage(
                     Component.translatable("persona.roster.already")
                             .withStyle(ChatFormatting.YELLOW)
             );
-            return InteractionResult.FAIL;
+            return InteractionResult.PASS;
         }
 
         CharacterData targetCharacter = targetData.getCurrentCharacter().get();
@@ -117,7 +119,7 @@ public class RosterItem extends Item {
         ServerPlayNetworking.send(serverUser, new AddToRosterS2CPayload(
                 new AddCharacterToRosterData(targetCharacter.getCorrespondingPlayer(), targetCharacter.getCustomName(), ""))
         );
-
+        user.playSound(SoundEvents.BOOK_PAGE_TURN);
         return InteractionResult.SUCCESS;
     }
 }

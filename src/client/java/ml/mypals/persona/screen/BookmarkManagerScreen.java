@@ -13,8 +13,10 @@ import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.sounds.SoundEvents;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -379,17 +381,20 @@ public class BookmarkManagerScreen extends Screen {
                 PersonaClient.getBookMarkManager().deactivate(name);
                 activeBookmarks.remove(hoveredActiveSlot);
                 stopEditing();
+                Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
                 return true;
             }
         }
 
         if (hoveredNewButton) {
             createNewBookmark();
+            Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
             return true;
         }
 
         if (hoveredActiveSlot >= 0 && !isDragging) {
             startEditing(hoveredActiveSlot);
+            Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
             return true;
         }
 
@@ -399,11 +404,13 @@ public class BookmarkManagerScreen extends Screen {
 
         if (hoveredAvailableSlot >= 0) {
             startDragging(availableBookmarks.get(hoveredAvailableSlot), DragSource.AVAILABLE);
+            Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
             return true;
         }
 
         if (hoveredSideBookmark >= 0 && hoveredSideBookmark < activeBookmarks.size()) {
             startDragging(activeBookmarks.get(hoveredSideBookmark), DragSource.ACTIVE);
+            Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
             return true;
         }
 

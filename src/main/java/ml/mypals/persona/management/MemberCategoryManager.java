@@ -47,7 +47,7 @@ public class MemberCategoryManager {
                     "DEFAULT",
                     3,
                     false,
-                    true,
+                    false,
                     0,
                     1
             );

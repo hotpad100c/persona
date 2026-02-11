@@ -37,13 +37,13 @@
   "command.persona.category.list.roster": " - Roster: %s",
   "command.persona.category.list.priority": " - Priority: %s",
   "command.persona.category.list.roster_level": " - Roster Level: '%s",
+  "command.persona.category.list.display_join_leave": "\nNotify On Join: %s",
 
   "command.persona.category.id": "\nID: %s",
   "command.persona.category.max": "\nMax Characters: %s",
   "command.persona.category.roster": "\nUse Roster: %s",
   "command.persona.category.priority": "\nPriority: %s",
   "command.persona.category.roster_level": "\nRoster Level: %s",
-
   "command.persona.category.player.set": "Set player ",
   "command.persona.category.player.notify": "Your category is now: ",
   "command.persona.category.player.failed": "Category does not exist",
@@ -55,6 +55,7 @@
   "command.persona.player.info.max": "Max Characters: ",
   "command.persona.player.info.roster": "Use Roster: ",
   "command.persona.player.info.roster_level": "Roster Level: ",
+  "command.persona.player.info.display_join_leave": "Notify On Join: %s",
 
   "persona.roster.add_player": "Record Player",
   "persona.roster.name": "Name",

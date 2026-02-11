@@ -16,8 +16,10 @@ import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.sounds.SoundEvents;
 import org.jetbrains.annotations.NotNull;
 import java.util.*;
 import java.util.List;
@@ -37,28 +39,28 @@ public class RosterViewScreen extends Screen {
     private static final Identifier BOOK_LOCATION =
             Identifier.fromNamespaceAndPath(MOD_ID,"textures/gui/roster_page.png");
 
-    private static final Identifier BOOKMARK_1 =
+    public static final Identifier BOOKMARK_1 =
             Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/bookmark_1.png");
 
-    private static final Identifier BOOKMARK_2 =
+    public static final Identifier BOOKMARK_2 =
             Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/bookmark_2.png");
 
-    private static final Identifier BOOKMARK_3 =
+    public static final Identifier BOOKMARK_3 =
             Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/bookmark_3.png");
 
-    private static final Identifier BOOKMARK_4 =
+    public static final Identifier BOOKMARK_4 =
             Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/bookmark_4.png");
 
-    private static final Identifier BOOKMARK_5 =
+    public static final Identifier BOOKMARK_5 =
             Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/bookmark_5.png");
 
-    private static final Identifier BOOKMARK_6 =
+    public static final Identifier BOOKMARK_6 =
             Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/bookmark_6.png");
 
-    private static final Identifier BOOKMARK_7 =
+    public static final Identifier BOOKMARK_7 =
             Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/bookmark_7.png");
 
-    private static final Identifier BOOKMARK_8 =
+    public static final Identifier BOOKMARK_8 =
             Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/bookmark_8.png");
 
     private static final Identifier CHARACTER_ADD =
@@ -93,9 +95,9 @@ public class RosterViewScreen extends Screen {
     private static final int SLOTS_PER_COL = 3;
     private static final int SLOTS_PER_PAGE = SLOTS_PER_ROW * SLOTS_PER_COL;
 
-    private static final int BOOKMARK_WIDTH = 27;
-    private static final int BOOKMARK_HEIGHT = 11;
-    private static final int BOOKMARK_SPACING = 1;
+    public static final int BOOKMARK_WIDTH = 27;
+    public static final int BOOKMARK_HEIGHT = 11;
+    public static final int BOOKMARK_SPACING = 1;
     private static final int STAR_BUTTON_SIZE = 12;
 
     private int mouseX;
@@ -308,7 +310,7 @@ public class RosterViewScreen extends Screen {
             String displayText = bookmark.group.equals("all") ? "All" : bookmark.group;
             String shorten = displayText;
 
-            if (font.width(displayText) > SLOT_SIZE - 10) {
+            if (font.width(displayText) > BOOKMARK_WIDTH - 10) {
                 shorten = font.plainSubstrByWidth(shorten, BOOKMARK_WIDTH - 14) + "...";
                 if(isHovered)  gui.setTooltipForNextFrame(Component.literal(displayText), mouseX, mouseY);
             }
@@ -502,6 +504,7 @@ public class RosterViewScreen extends Screen {
                 currentPage = 0;
                 hoveredSlot = -1;
                 init();
+                Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
                 return true;
             }
         }
@@ -524,6 +527,7 @@ public class RosterViewScreen extends Screen {
                 PersonaClient.getRosterDataManager().saveToCache();
 
                 init();
+                Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
                 return true;
             }
         }
@@ -535,6 +539,7 @@ public class RosterViewScreen extends Screen {
                 RosterEntry entry = entries.get(globalIndex);
                 Minecraft.getInstance().setScreen(new RosterRecordScreen(entry));
 
+                Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
                 return true;
             }
         }
@@ -542,7 +547,7 @@ public class RosterViewScreen extends Screen {
         return super.mouseClicked(mouseButtonEvent, button);
     }
 
-    private record GroupBookmark(String group, int x, int y) {
+    public record GroupBookmark(String group, int x, int y) {
     }
 
     private static class FakeMouse {

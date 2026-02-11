@@ -1,5 +1,6 @@
 package ml.mypals.persona;
 
+import com.mojang.authlib.minecraft.client.MinecraftClient;
 import com.sun.jna.platform.win32.Psapi;
 import ml.mypals.persona.fakePlayer.FakePlayerFactory;
 import ml.mypals.persona.items.rosterData.AddCharacterToRosterData;
@@ -18,6 +19,8 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 
 import static ml.mypals.persona.Persona.MOD_ID;

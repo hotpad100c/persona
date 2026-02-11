@@ -2,15 +2,16 @@
 	"schemaVersion": 1,
 	"id": "persona",
 	"version": "${version}",
-	"name": "persona",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"name": "roster",
+	"description": "Brings the consept of character to minecraft!",
 	"accessWidener" : "persona.accesswidener",
 	"authors": [
-		"Me!"
+		"Ryan100C",
+		"observer (1300752575)"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "",
+		"sources": ""
 	},
 	"license": "CC0-1.0",
 	"icon": "assets/persona/icon.png",
@@ -34,7 +35,7 @@
 		}
 	],
 	"depends": {
-		"fabricloader": ">=0.18.4",
+		"fabricloader": "*",
 		"minecraft": "~1.21.11",
 		"java": ">=21",
 		"fabric-api": "*"

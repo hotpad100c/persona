@@ -77,7 +77,7 @@ allprojects {
 			forRepository {
 				maven {
 					name = 'lionarius-repository'
-					url = 'https://reposilite.lionarius.ru/releases'
+					url = 'https://repo.inventivetalent.org/repository/public/'
 				}
 			}
 			filter {

@@ -7,6 +7,7 @@ import ml.mypals.persona.items.rosterData.RosterEntry;
 import ml.mypals.persona.network.packets.roster.AddToRosterC2SPayload;
 import ml.mypals.persona.items.rosterData.AddCharacterToRosterData;
 import ml.mypals.persona.network.packets.roster.RosterDeltaSyncC2SPayload;
+import ml.mypals.persona.roster.BookMarkManager;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -14,32 +15,37 @@ import net.minecraft.client.gui.components.*;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.BookEditScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.client.resources.sounds.Sound;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.ARGB;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static ml.mypals.persona.Persona.MOD_ID;
+import static ml.mypals.persona.screen.RosterViewScreen.*;
 
 
 public class RosterRecordScreen extends Screen  {
 
+
     private static final Identifier BOOK_LOCATION =
             Identifier.fromNamespaceAndPath(MOD_ID,"textures/gui/roster_page.png");
 
-
     private static final Identifier CONFIRM =
             Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/confirm.png");
-
 
     private static final Identifier CANCEL =
             Identifier.fromNamespaceAndPath(MOD_ID, "textures/gui/cancel.png");
@@ -73,6 +79,10 @@ public class RosterRecordScreen extends Screen  {
     private Button delete;
     private int leftPos;
     private int topPos;
+
+    private String selectedGroup = "all";
+    private List<String> availableGroups = new ArrayList<>();
+    private List<RosterViewScreen.GroupBookmark> groupBookmarks = new ArrayList<>();
 
     public RosterRecordScreen(@Nullable AddCharacterToRosterData characterData) {
         super(Component.translatable("persona.roster.add_player"));
@@ -214,6 +224,10 @@ public class RosterRecordScreen extends Screen  {
                     rosterEntry.getCharacterSkin()
             );
         }
+        if(rosterEntry != null){
+            collectGroups();
+            createGroupBookmarks();
+        }
     }
 
     private void onConfirm() {
@@ -228,7 +242,7 @@ public class RosterRecordScreen extends Screen  {
 
         }
         else if(rosterEntry != null){
-
+            rosterEntry.setGroup(selectedGroup);
             rosterEntry.setNotes(memoBox.getValue().trim());
             rosterEntry.setNickname(name);
             Optional<CharacterData> characterDataOptional = PersonaClient.getCharacterManager().getCurrentCharacter();
@@ -263,6 +277,86 @@ public class RosterRecordScreen extends Screen  {
             }
         });
     }
+
+    private void collectGroups() {
+        availableGroups.clear();
+        availableGroups.add("all");
+
+        BookMarkManager bookMarkManager = PersonaClient.getBookMarkManager();
+        if(bookMarkManager == null) return;
+        bookMarkManager.getActiveMarks().stream()
+                .distinct()
+                .filter(g -> g != null && !g.isEmpty())
+                .forEach(availableGroups::add);
+    }
+    private void createGroupBookmarks() {
+        groupBookmarks.clear();
+        int bookmarkX = leftPos - BOOKMARK_WIDTH + 8;
+        int startY = topPos + 20;
+        int availableHeight = PAGE_HEIGHT - 40;
+
+        int groupCount = availableGroups.size();
+        int totalHeightNeeded = groupCount * BOOKMARK_HEIGHT + (groupCount - 1) * BOOKMARK_SPACING;
+
+        int actualSpacing = BOOKMARK_SPACING;
+        if (totalHeightNeeded > availableHeight) {
+            actualSpacing = (availableHeight - groupCount * BOOKMARK_HEIGHT) / Math.max(1, groupCount - 1);
+        }
+
+
+        if(rosterEntry.getGroup() != null){
+            if(!availableGroups.contains(rosterEntry.getGroup()))
+            {availableGroups.addFirst(rosterEntry.getGroup() );}
+            selectedGroup = rosterEntry.getGroup();
+        }
+
+        for (int i = 0; i < availableGroups.size(); i++) {
+            String group = availableGroups.get(i);
+            int y = startY + i * (BOOKMARK_HEIGHT + actualSpacing);
+            groupBookmarks.add(new GroupBookmark(group, bookmarkX, y));
+        }
+    }
+
+    private void renderGroupBookmarks(GuiGraphics gui, int mouseX, int mouseY) {
+        for (RosterViewScreen.GroupBookmark bookmark : groupBookmarks) {
+            boolean isSelected = bookmark.group().equals(selectedGroup);
+            boolean isHovered = mouseX >= bookmark.x() && mouseX < bookmark.x() + BOOKMARK_WIDTH &&
+                    mouseY >= bookmark.y() && mouseY < bookmark.y() + BOOKMARK_HEIGHT;
+
+            int index = Math.floorMod(bookmark.group().hashCode(), 8);
+
+            Identifier texture = switch (index) {
+                case 0 -> BOOKMARK_1;
+                case 1 -> BOOKMARK_2;
+                case 2 -> BOOKMARK_3;
+                case 3 -> BOOKMARK_4;
+                case 4 -> BOOKMARK_5;
+                case 5 -> BOOKMARK_6;
+                case 6 -> BOOKMARK_7;
+                default -> BOOKMARK_8;
+            };
+
+            int delta = (isHovered || isSelected?4:0);
+            int posX = bookmark.x() - delta;
+
+            gui.blit(RenderPipelines.GUI_TEXTURED,texture,posX, bookmark.y(), 0, 0,BOOKMARK_WIDTH+delta,BOOKMARK_HEIGHT,BOOKMARK_WIDTH+delta,BOOKMARK_HEIGHT);
+
+
+            String displayText = bookmark.group().equals("all") ? "All" : bookmark.group();
+            String shorten = displayText;
+
+            if (font.width(displayText) > BOOKMARK_WIDTH - 10) {
+                shorten = font.plainSubstrByWidth(shorten, BOOKMARK_WIDTH - 14) + "...";
+                if(isHovered)  gui.setTooltipForNextFrame(Component.literal(displayText), mouseX, mouseY);
+            }
+
+            gui.drawString(font, shorten,
+                    posX+4,
+                    bookmark.y() + (BOOKMARK_HEIGHT - font.lineHeight) / 2+1,
+                    -2039584);
+        }
+    }
+
     @Override
     public void renderBackground(@NotNull GuiGraphics guiGraphics, int i, int j, float f) {
         super.renderBackground(guiGraphics, i, j, f);
@@ -357,6 +451,8 @@ public class RosterRecordScreen extends Screen  {
             );
         }
 
+        renderGroupBookmarks(gui, mouseX, mouseY);
+
         gui.blit(
                 RenderPipelines.GUI_TEXTURED,
                 PLAYER_VIEW_DOWNER,
@@ -370,6 +466,22 @@ public class RosterRecordScreen extends Screen  {
     }
 
     @Override
+    public boolean mouseClicked(@NotNull MouseButtonEvent mouseButtonEvent, boolean button) {
+
+        int mouseX = (int) mouseButtonEvent.x();
+        int mouseY = (int) mouseButtonEvent.y();
+        for (GroupBookmark bookmark : groupBookmarks.reversed()) {
+            if (mouseX >= bookmark.x() && mouseX < bookmark.x() + BOOKMARK_WIDTH &&
+                    mouseY >= bookmark.y() && mouseY < bookmark.y() + BOOKMARK_HEIGHT) {
+                selectedGroup = bookmark.group();
+                Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+                return true;
+            }
+        }
+        return super.mouseClicked(mouseButtonEvent, button);
+    }
+
+        @Override
     public boolean isPauseScreen() {
         return false;
     }

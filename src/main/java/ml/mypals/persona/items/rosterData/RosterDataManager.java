@@ -40,7 +40,8 @@ public class RosterDataManager {
 
     public PlayerRosterData getPlayerRoster(CharacterData owner) {
         if (activeRosterStorage.containsKey(owner)) {
-            return activeRosterStorage.get(owner);
+            PlayerRosterData data = activeRosterStorage.get(owner);
+            if(data != null) return data;
         }
 
         File file = getRosterFile(
